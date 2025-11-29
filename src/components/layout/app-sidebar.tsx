@@ -17,6 +17,7 @@ import {
   Shield,
   LogOut,
   ChevronDown,
+  LifeBuoy,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -127,6 +128,11 @@ const settingsNavItems = [
       { title: 'Языки', url: '/dashboard/settings/languages' },
       { title: 'Подписка', url: '/dashboard/settings/subscription' },
     ],
+  },
+  {
+    title: 'Поддержка',
+    url: '/dashboard/settings/support',
+    icon: LifeBuoy,
   },
 ];
 

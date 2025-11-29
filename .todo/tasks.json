@@ -5,7 +5,7 @@
     "tags": [],
     "title": "Сделать раздел службы поддержки ",
     "description": "",
-    "status": "TODO",
+    "status": "IN_PROGRESS",
     "date": {
       "date": {
         "year": 2025,
@@ -141,7 +141,7 @@
     "tags": [],
     "title": "Показывать в шапке текуший выбранный ресторан ",
     "description": "",
-    "status": "IN_PROGRESS",
+    "status": "DONE",
     "date": {
       "date": {
         "year": 2025,
@@ -153,6 +153,19 @@
         "minute": 58,
         "second": 58,
         "nano": 801405000
+      }
+    },
+    "finishDate": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 29
+      },
+      "time": {
+        "hour": 15,
+        "minute": 4,
+        "second": 45,
+        "nano": 357167000
       }
     },
     "isImported": false
