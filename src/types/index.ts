@@ -124,11 +124,17 @@ export interface MenuCategory {
   createdAt: string;
   restaurantId: number;
   name: string;
+  sort_order: number;
 }
 
 export interface CreateMenuCategoryRequest {
   name: string;
   restaurant_id: number;
+  sort_order?: number;
+}
+
+export interface UpdateCategorySortOrderRequest {
+  categories: { id: number; sort_order: number }[];
 }
 
 // Dish types
@@ -255,12 +261,18 @@ export interface Question {
   text: string;
   language?: Language;
   chat_type: 'reservation' | 'menu';
+  display_order: number;
 }
 
 export interface CreateQuestionRequest {
   text: string;
   languageCode?: string;
   chatType?: 'reservation' | 'menu';
+  displayOrder?: number;
+}
+
+export interface ReorderQuestionsRequest {
+  questionIds: number[];
 }
 
 // Subscription types

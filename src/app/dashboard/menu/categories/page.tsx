@@ -1,9 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, GripVertical, Loader2 } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +49,70 @@ import { categoryApi, dishApi } from '@/lib/api';
 import { useRestaurantStore } from '@/store/restaurant';
 import type { MenuCategory, Dish } from '@/types';
 
+interface SortableCategoryItemProps {
+  category: MenuCategory;
+  dishCount: number;
+  onEdit: (category: MenuCategory) => void;
+  onDelete: (id: number) => void;
+}
+
+function SortableCategoryItem({ category, dishCount, onEdit, onDelete }: SortableCategoryItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: category.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
+    >
+      <button
+        type="button"
+        className="cursor-grab active:cursor-grabbing touch-none"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-5 w-5 text-muted-foreground" />
+      </button>
+      <div className="flex-1">
+        <p className="font-medium">{category.name}</p>
+      </div>
+      <Badge variant="secondary">
+        {dishCount} блюд
+      </Badge>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onEdit(category)}
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onDelete(category.id)}
+          disabled={dishCount > 0}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function CategoriesPage() {
   const queryClient = useQueryClient();
   const { selectedRestaurant } = useRestaurantStore();
@@ -39,6 +120,13 @@ export default function CategoriesPage() {
   const [editCategory, setEditCategory] = useState<MenuCategory | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const { data: categories, isLoading } = useQuery({
     queryKey: ['categories', selectedRestaurant?.id],
@@ -60,6 +148,13 @@ export default function CategoriesPage() {
     enabled: !!selectedRestaurant,
   });
 
+  const sortedCategories = useMemo(() =>
+    [...(categories || [])].sort((a: MenuCategory, b: MenuCategory) =>
+      (a.sort_order ?? 0) - (b.sort_order ?? 0)
+    ),
+    [categories]
+  );
+
   const getDishCount = (categoryId: number) => {
     return dishes?.filter((d: Dish) => d.menuCategory?.id === categoryId).length || 0;
   };
@@ -77,6 +172,19 @@ export default function CategoriesPage() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, name }: { id: number; name: string }) =>
+      categoryApi.update(id, { name, restaurant_id: selectedRestaurant!.id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories', selectedRestaurant?.id] });
+      toast.success('Категория обновлена');
+      setEditCategory(null);
+    },
+    onError: () => {
+      toast.error('Ошибка при обновлении категории');
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: categoryApi.delete,
     onSuccess: () => {
@@ -88,6 +196,42 @@ export default function CategoriesPage() {
       toast.error('Ошибка при удалении категории');
     },
   });
+
+  const reorderMutation = useMutation({
+    mutationFn: (newCategories: MenuCategory[]) =>
+      categoryApi.updateSortOrder({
+        categories: newCategories.map((cat, index) => ({
+          id: cat.id,
+          sort_order: index,
+        })),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories', selectedRestaurant?.id] });
+      toast.success('Порядок сохранён');
+    },
+    onError: () => {
+      toast.error('Ошибка при сохранении порядка');
+    },
+  });
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = sortedCategories.findIndex((c) => c.id === active.id);
+      const newIndex = sortedCategories.findIndex((c) => c.id === over.id);
+
+      const newOrder = arrayMove(sortedCategories, oldIndex, newIndex);
+
+      // Optimistic update
+      queryClient.setQueryData(
+        ['categories', selectedRestaurant?.id],
+        newOrder.map((c, index) => ({ ...c, sort_order: index }))
+      );
+
+      reorderMutation.mutate(newOrder);
+    }
+  };
 
   if (!selectedRestaurant) {
     return (
@@ -113,6 +257,14 @@ export default function CategoriesPage() {
       return;
     }
     createMutation.mutate(newCategoryName);
+  };
+
+  const handleUpdate = () => {
+    if (!editCategory?.name.trim()) {
+      toast.error('Введите название категории');
+      return;
+    }
+    updateMutation.mutate({ id: editCategory.id, name: editCategory.name });
   };
 
   return (
@@ -142,7 +294,7 @@ export default function CategoriesPage() {
           <CardHeader>
             <CardTitle>Все категории</CardTitle>
             <CardDescription>
-              Перетащите для изменения порядка
+              Перетащите для изменения порядка отображения в меню
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -152,44 +304,33 @@ export default function CategoriesPage() {
                   <Skeleton key={i} className="h-14 w-full" />
                 ))}
               </div>
-            ) : categories?.length === 0 ? (
+            ) : sortedCategories.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 Нет категорий. Создайте первую категорию.
               </div>
             ) : (
-              <div className="space-y-2">
-                {categories?.map((category: MenuCategory) => (
-                  <div
-                    key={category.id}
-                    className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
-                  >
-                    <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
-                    <div className="flex-1">
-                      <p className="font-medium">{category.name}</p>
-                    </div>
-                    <Badge variant="secondary">
-                      {getDishCount(category.id)} блюд
-                    </Badge>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setEditCategory(category)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeleteId(category.id)}
-                        disabled={getDishCount(category.id) > 0}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={sortedCategories.map((c) => c.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-2">
+                    {sortedCategories.map((category: MenuCategory) => (
+                      <SortableCategoryItem
+                        key={category.id}
+                        category={category}
+                        dishCount={getDishCount(category.id)}
+                        onEdit={setEditCategory}
+                        onDelete={setDeleteId}
+                      />
+                    ))}
                   </div>
-                ))}
-              </div>
+                </SortableContext>
+              </DndContext>
             )}
           </CardContent>
         </Card>
@@ -242,13 +383,17 @@ export default function CategoriesPage() {
                   prev ? { ...prev, name: e.target.value } : null
                 )
               }
+              onKeyDown={(e) => e.key === 'Enter' && handleUpdate()}
             />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditCategory(null)}>
               Отмена
             </Button>
-            <Button onClick={() => toast.info('Функция в разработке')}>
+            <Button onClick={handleUpdate} disabled={updateMutation.isPending}>
+              {updateMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Сохранить
             </Button>
           </DialogFooter>

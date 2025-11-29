@@ -12,6 +12,7 @@ import type {
   CreateTableRequest,
   MenuCategory,
   CreateMenuCategoryRequest,
+  UpdateCategorySortOrderRequest,
   Dish,
   CreateDishRequest,
   DishesByCategoryResponse,
@@ -22,6 +23,7 @@ import type {
   ChatMessage,
   Question,
   CreateQuestionRequest,
+  ReorderQuestionsRequest,
   Subscription,
   AdminStats,
   AdminLog,
@@ -256,6 +258,16 @@ export const categoryApi = {
     return response.data;
   },
 
+  update: async (id: number, data: Partial<CreateMenuCategoryRequest>): Promise<ApiResponse<MenuCategory>> => {
+    const response = await apiClient.patch(`/categories/${id}`, data);
+    return response.data;
+  },
+
+  updateSortOrder: async (data: UpdateCategorySortOrderRequest): Promise<ApiResponse<void>> => {
+    const response = await apiClient.put('/categories/sort-order', data);
+    return response.data;
+  },
+
   delete: async (id: number): Promise<ApiResponse<void>> => {
     const response = await apiClient.delete(`/categories/${id}`);
     return response.data;
@@ -424,6 +436,11 @@ export const questionApi = {
 
   update: async (id: number, data: Partial<CreateQuestionRequest>): Promise<ApiResponse<Question>> => {
     const response = await apiClient.put(`/questions/${id}`, data);
+    return response.data;
+  },
+
+  reorder: async (data: ReorderQuestionsRequest): Promise<ApiResponse<void>> => {
+    const response = await apiClient.put('/questions/reorder', data);
     return response.data;
   },
 

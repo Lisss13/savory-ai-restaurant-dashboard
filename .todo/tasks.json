@@ -5,7 +5,7 @@
     "tags": [],
     "title": "Сделать раздел службы поддержки ",
     "description": "",
-    "status": "IN_PROGRESS",
+    "status": "DONE",
     "date": {
       "date": {
         "year": 2025,
@@ -17,6 +17,19 @@
         "minute": 11,
         "second": 26,
         "nano": 632441000
+      }
+    },
+    "finishDate": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 29
+      },
+      "time": {
+        "hour": 15,
+        "minute": 14,
+        "second": 33,
+        "nano": 172589000
       }
     },
     "isImported": false
@@ -62,7 +75,7 @@
     "tags": [],
     "title": "сделать перетаскивание для категорий меню ",
     "description": "",
-    "status": "TODO",
+    "status": "DONE",
     "date": {
       "date": {
         "year": 2025,
@@ -74,6 +87,19 @@
         "minute": 15,
         "second": 14,
         "nano": 158773000
+      }
+    },
+    "finishDate": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 29
+      },
+      "time": {
+        "hour": 15,
+        "minute": 35,
+        "second": 26,
+        "nano": 194923000
       }
     },
     "isImported": false
@@ -119,7 +145,7 @@
     "tags": [],
     "title": "Сделать перетаскивание по вопросом которые отправляются пользователю что бы можно было задавать порядок ",
     "description": "",
-    "status": "TODO",
+    "status": "DONE",
     "date": {
       "date": {
         "year": 2025,
@@ -131,6 +157,19 @@
         "minute": 28,
         "second": 58,
         "nano": 612336000
+      }
+    },
+    "finishDate": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 29
+      },
+      "time": {
+        "hour": 15,
+        "minute": 35,
+        "second": 29,
+        "nano": 372442000
       }
     },
     "isImported": false

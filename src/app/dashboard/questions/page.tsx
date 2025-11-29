@@ -1,9 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Plus, Trash2, GripVertical, Loader2 } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +57,60 @@ import { Label } from '@/components/ui/label';
 import { questionApi, languageApi } from '@/lib/api';
 import type { Question, Language } from '@/types';
 
+interface SortableQuestionItemProps {
+  question: Question;
+  onDelete: (id: number) => void;
+}
+
+function SortableQuestionItem({ question, onDelete }: SortableQuestionItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: question.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-3 p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
+    >
+      <button
+        type="button"
+        className="cursor-grab active:cursor-grabbing touch-none"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </button>
+      <div className="flex-1">
+        <p className="font-medium">{question.text}</p>
+        <div className="flex items-center gap-2 mt-1">
+          <Badge variant="outline" className="text-xs">
+            {question.language?.name || 'Все языки'}
+          </Badge>
+        </div>
+      </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => onDelete(question.id)}
+      >
+        <Trash2 className="h-4 w-4 text-destructive" />
+      </Button>
+    </div>
+  );
+}
+
 export default function QuestionsPage() {
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -50,6 +121,13 @@ export default function QuestionsPage() {
     type: 'menu' as 'menu' | 'reservation',
     languageId: '',
   });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const { data: questions, isLoading: isQuestionsLoading } = useQuery({
     queryKey: ['questions'],
@@ -97,8 +175,49 @@ export default function QuestionsPage() {
     },
   });
 
-  const menuQuestions = questions?.filter((q: Question) => q.chat_type === 'menu') || [];
-  const reservationQuestions = questions?.filter((q: Question) => q.chat_type === 'reservation') || [];
+  const reorderMutation = useMutation({
+    mutationFn: (questionIds: number[]) => questionApi.reorder({ questionIds }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['questions'] });
+      toast.success('Порядок сохранён');
+    },
+    onError: () => {
+      toast.error('Ошибка при сохранении порядка');
+    },
+  });
+
+  const menuQuestions = useMemo(() =>
+    (questions?.filter((q: Question) => q.chat_type === 'menu') || [])
+      .sort((a: Question, b: Question) => (a.display_order ?? 0) - (b.display_order ?? 0)),
+    [questions]
+  );
+
+  const reservationQuestions = useMemo(() =>
+    (questions?.filter((q: Question) => q.chat_type === 'reservation') || [])
+      .sort((a: Question, b: Question) => (a.display_order ?? 0) - (b.display_order ?? 0)),
+    [questions]
+  );
+
+  const handleDragEnd = (event: DragEndEvent, questionsList: Question[]) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = questionsList.findIndex((q) => q.id === active.id);
+      const newIndex = questionsList.findIndex((q) => q.id === over.id);
+
+      const newOrder = arrayMove(questionsList, oldIndex, newIndex);
+      const questionIds = newOrder.map((q) => q.id);
+
+      // Optimistic update
+      queryClient.setQueryData(['questions'], (old: Question[] | undefined) => {
+        if (!old) return old;
+        const otherQuestions = old.filter((q) => q.chat_type !== questionsList[0]?.chat_type);
+        return [...otherQuestions, ...newOrder.map((q, index) => ({ ...q, display_order: index }))];
+      });
+
+      reorderMutation.mutate(questionIds);
+    }
+  };
 
   const renderQuestionList = (questionsList: Question[]) => {
     if (isQuestionsLoading) {
@@ -131,31 +250,26 @@ export default function QuestionsPage() {
     }
 
     return (
-      <div className="space-y-2">
-        {questionsList.map((question: Question) => (
-          <div
-            key={question.id}
-            className="flex items-center gap-3 p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
-          >
-            <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
-            <div className="flex-1">
-              <p className="font-medium">{question.text}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline" className="text-xs">
-                  {question.language?.name || 'Русский'}
-                </Badge>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setDeleteId(question.id)}
-            >
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={(event) => handleDragEnd(event, questionsList)}
+      >
+        <SortableContext
+          items={questionsList.map((q) => q.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="space-y-2">
+            {questionsList.map((question: Question) => (
+              <SortableQuestionItem
+                key={question.id}
+                question={question}
+                onDelete={setDeleteId}
+              />
+            ))}
           </div>
-        ))}
-      </div>
+        </SortableContext>
+      </DndContext>
     );
   };
 
@@ -185,7 +299,7 @@ export default function QuestionsPage() {
           <CardHeader>
             <CardTitle>Вопросы по категориям</CardTitle>
             <CardDescription>
-              Перетащите вопросы для изменения порядка
+              Перетащите вопросы для изменения порядка отображения
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -252,7 +366,7 @@ export default function QuestionsPage() {
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Выберите язык" />
+                  <SelectValue placeholder="Все языки" />
                 </SelectTrigger>
                 <SelectContent>
                   {languages?.map((lang: Language) => (

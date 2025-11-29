@@ -15,6 +15,7 @@ npm run start    # Start production server
 
 - **Technical specification**: `docs/restaurant_dashboard_spec.md` - full project requirements, UI/UX specs, page descriptions, and feature details
 - **Server API**: `docs/swagger.yaml` - OpenAPI 3.0 specification for all backend endpoints
+- **Sorting feature spec**: `docs/new_task.md` - drag-and-drop sorting for questions and menu categories
 
 **Important**: When implementing new functionality, always refer to these files to ensure compliance with the spec and correct API usage.
 
@@ -33,6 +34,7 @@ This is a **Savory AI Restaurant Dashboard** - a Next.js 16 admin panel for rest
 - **TanStack Query** for server state and caching
 - **Zod** + **react-hook-form** for form validation
 - **Axios** for API requests with JWT interceptors
+- **@dnd-kit** for drag-and-drop sorting functionality
 
 ### Key Directories
 
@@ -42,25 +44,32 @@ This is a **Savory AI Restaurant Dashboard** - a Next.js 16 admin panel for rest
 - `src/store/` - Zustand stores (`auth.ts` for auth state, `restaurant.ts` for selected restaurant)
 - `src/types/index.ts` - All TypeScript interfaces matching the backend API
 - `src/components/ui/` - shadcn/ui components
-- `src/components/layout/` - App sidebar and header
+- `src/components/layout/` - App sidebar and header (with restaurant selector)
 
 ### Authentication Flow
 
-JWT tokens stored in localStorage. The `useAuthStore` handles login/logout and persists to `auth-storage`. The API client's interceptor auto-attaches tokens and redirects to `/login` on 401.
+JWT tokens stored in localStorage. The `useAuthStore` handles login/logout and persists to `auth-storage`. The API client's interceptor auto-attaches tokens and redirects to `/login` on 401. Logout redirects user to `/login`.
 
 ### Route Structure
 
 - `/` redirects to `/login`
 - `/dashboard` - Main dashboard with stats
 - `/dashboard/restaurants` - Restaurant CRUD
-- `/dashboard/menu/categories`, `/dashboard/menu/dishes` - Menu management
+- `/dashboard/menu/categories` - Menu categories with drag-and-drop sorting
+- `/dashboard/menu/dishes` - Dishes management
 - `/dashboard/tables` - Table management
-- `/dashboard/reservations/list` - Reservations
-- `/dashboard/chats/active` - Customer chat interface
+- `/dashboard/reservations/list`, `/dashboard/reservations/calendar` - Reservations
+- `/dashboard/chats/active`, `/dashboard/chats/history` - Customer chat interface
+- `/dashboard/questions` - Quick questions for chatbot with drag-and-drop sorting
 - `/dashboard/qr-codes` - QR code generation
+- `/dashboard/analytics/*` - Analytics pages (overview, reservations, chats)
 - `/dashboard/team` - Team/staff management
 - `/dashboard/settings/profile` - User profile
-- `/dashboard/admin` - Admin-only statistics (role-gated)
+- `/dashboard/settings/organization` - Organization settings
+- `/dashboard/settings/languages` - Language management
+- `/dashboard/settings/subscription` - Subscription management
+- `/dashboard/settings/support` - Support tickets (create & view)
+- `/dashboard/admin/*` - Admin-only pages (stats, users, organizations, moderation, logs)
 
 ### API Pattern
 
@@ -68,8 +77,25 @@ All API calls go through functions in `src/lib/api.ts`. Example:
 ```typescript
 const { data } = await restaurantApi.getAll();
 const { data } = await dishApi.create({ menuCategoryId, name, price, ... });
+const { data } = await supportApi.create({ title, description, email });
+const { data } = await questionApi.reorder({ questionIds: [1, 2, 3] });
+const { data } = await categoryApi.updateSortOrder({ categories: [{ id: 1, sort_order: 0 }] });
 ```
 
 ### Form Pattern
 
 Forms use react-hook-form with zod schemas. Boolean fields in zod schemas must be `z.boolean()` (not `.default()`) to work with the resolver.
+
+### Drag-and-Drop Sorting
+
+Uses `@dnd-kit/core` and `@dnd-kit/sortable` for drag-and-drop functionality:
+- **Questions page**: Reorder via `PUT /questions/reorder` with `{ questionIds: number[] }`
+- **Categories page**: Reorder via `PUT /categories/sort-order` with `{ categories: [{ id, sort_order }] }`
+
+Both implement optimistic updates for smooth UX.
+
+### Restaurant Selection
+
+When user has multiple restaurants, a dropdown appears in the header to switch between them. The selected restaurant is persisted in `restaurant-storage` via Zustand. Restaurants are loaded in the dashboard layout to ensure availability across all pages.
+
+
