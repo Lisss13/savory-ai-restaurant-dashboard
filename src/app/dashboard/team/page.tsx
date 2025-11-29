@@ -86,14 +86,12 @@ export default function TeamPage() {
 
   const createUserMutation = useMutation({
     mutationFn: async (data: InviteFormData) => {
-      const userResponse = await userApi.create({
+      return userApi.create({
         name: data.name,
         email: data.email,
         password: data.password,
         company: organization?.name || '',
       });
-      await organizationApi.addUser(organization!.id, userResponse.data.id);
-      return userResponse;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization'] });
@@ -130,7 +128,9 @@ export default function TeamPage() {
   const allUsers: (UserInOrg & { isAdmin: boolean })[] = orgData
     ? [
         { ...orgData.admin, isAdmin: true } as UserInOrg & { isAdmin: boolean },
-        ...(orgData.users?.map((u: UserInOrg) => ({ ...u, isAdmin: false })) || []),
+        ...(orgData.users
+          ?.filter((u: UserInOrg) => u.id !== orgData.admin?.id)
+          .map((u: UserInOrg) => ({ ...u, isAdmin: false })) || []),
       ]
     : [];
 
