@@ -215,7 +215,7 @@
     "tags": [],
     "title": "поправить категорию и фильтрации у блюд ресторана ",
     "description": "",
-    "status": "TODO",
+    "status": "DONE",
     "date": {
       "date": {
         "year": 2025,
@@ -227,6 +227,19 @@
         "minute": 4,
         "second": 51,
         "nano": 936220000
+      }
+    },
+    "finishDate": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 30
+      },
+      "time": {
+        "hour": 1,
+        "minute": 11,
+        "second": 11,
+        "nano": 474777000
       }
     },
     "isImported": false
@@ -293,6 +306,41 @@
         "minute": 6,
         "second": 56,
         "nano": 165364000
+      }
+    },
+    "isImported": false
+  },
+  {
+    "id": "TASK_140",
+    "priority": "LOW",
+    "tags": [],
+    "title": "добавть бжу к блюду ",
+    "description": "",
+    "status": "DONE",
+    "date": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 29
+      },
+      "time": {
+        "hour": 17,
+        "minute": 8,
+        "second": 50,
+        "nano": 564221000
+      }
+    },
+    "finishDate": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 30
+      },
+      "time": {
+        "hour": 1,
+        "minute": 8,
+        "second": 37,
+        "nano": 219696000
       }
     },
     "isImported": false

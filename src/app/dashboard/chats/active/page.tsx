@@ -290,7 +290,9 @@ export default function ActiveChatsPage() {
                         </div>
                         <div className="flex items-center justify-between mt-1">
                           <p className="text-xs text-muted-foreground">
-                            {format(new Date(session.lastActive), 'HH:mm', { locale: ru })}
+                            {session.lastActive && !isNaN(new Date(session.lastActive).getTime())
+                              ? format(new Date(session.lastActive), 'HH:mm', { locale: ru })
+                              : '—'}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {session.messageCount || 0} сообщ.

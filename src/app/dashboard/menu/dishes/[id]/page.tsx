@@ -32,7 +32,8 @@ import {
 } from '@/components/ui/select';
 import { dishApi, categoryApi, uploadApi } from '@/lib/api';
 import { useRestaurantStore } from '@/store/restaurant';
-import type { MenuCategory } from '@/types';
+import { NutritionInput } from '@/components/nutrition';
+import type { MenuCategory, NutritionData } from '@/types';
 
 const COMMON_ALLERGENS = [
   'Глютен',
@@ -55,6 +56,11 @@ const dishSchema = z.object({
   price: z.number().min(0, 'Цена должна быть положительной'),
   description: z.string().optional(),
   image: z.string().optional(),
+  // Nutrition values (КБЖУ)
+  calories: z.number().min(0).max(9999).optional(),
+  proteins: z.number().min(0).max(999).optional(),
+  fats: z.number().min(0).max(999).optional(),
+  carbohydrates: z.number().min(0).max(999).optional(),
   ingredients: z.array(ingredientSchema).min(1, 'Добавьте хотя бы один ингредиент'),
   isDishOfDay: z.boolean(),
 });
@@ -69,6 +75,12 @@ export default function EditDishPage() {
   const dishId = Number(params.id);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
+  const [nutrition, setNutrition] = useState<NutritionData>({
+    calories: 0,
+    proteins: 0,
+    fats: 0,
+    carbohydrates: 0,
+  });
 
   const { data: dish, isLoading: isDishLoading } = useQuery({
     queryKey: ['dish', dishId],
@@ -97,6 +109,10 @@ export default function EditDishPage() {
       price: 0,
       description: '',
       image: '',
+      calories: 0,
+      proteins: 0,
+      fats: 0,
+      carbohydrates: 0,
       ingredients: [{ name: '', quantity: 0 }],
       isDishOfDay: false,
     },
@@ -116,10 +132,20 @@ export default function EditDishPage() {
         price: dish.price,
         description: dish.description || '',
         image: dish.image || '',
+        calories: dish.calories || 0,
+        proteins: dish.proteins || 0,
+        fats: dish.fats || 0,
+        carbohydrates: dish.carbohydrates || 0,
         ingredients: dish.ingredients?.length
           ? dish.ingredients.map((i) => ({ name: i.name, quantity: i.quantity }))
           : [{ name: '', quantity: 0 }],
         isDishOfDay: dish.isDishOfDay || false,
+      });
+      setNutrition({
+        calories: dish.calories || 0,
+        proteins: dish.proteins || 0,
+        fats: dish.fats || 0,
+        carbohydrates: dish.carbohydrates || 0,
       });
       setSelectedAllergens(dish.allergens?.map((a) => a.name) || []);
     }
@@ -129,11 +155,15 @@ export default function EditDishPage() {
     mutationFn: (data: DishFormValues) =>
       dishApi.update(dishId, {
         restaurant_id: selectedRestaurant!.id,
-        menu_category_id: parseInt(data.menuCategoryId),
+        menuCategoryId: parseInt(data.menuCategoryId),
         name: data.name,
         price: data.price,
         description: data.description,
         image: data.image,
+        proteins: nutrition.proteins || 0,
+        fats: nutrition.fats || 0,
+        carbohydrates: nutrition.carbohydrates || 0,
+        calories: nutrition.calories || 0,
         ingredients: data.ingredients,
         allergens: selectedAllergens.map((name) => ({ name })),
       }),
@@ -396,6 +426,18 @@ export default function EditDishPage() {
               </Card>
 
               <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Пищевая ценность (на 100г)</CardTitle>
+                    <CardDescription>
+                      Укажите КБЖУ блюда
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <NutritionInput value={nutrition} onChange={setNutrition} />
+                  </CardContent>
+                </Card>
+
                 <Card>
                   <CardHeader>
                     <CardTitle>Ингредиенты</CardTitle>

@@ -154,9 +154,22 @@ export interface Dish {
   price: number;
   description?: string;
   image?: string;
+  // Nutrition values (КБЖУ)
+  proteins: number;
+  fats: number;
+  carbohydrates: number;
+  calories: number;
   ingredients: Ingredient[];
   allergens?: Allergen[];
   isDishOfDay?: boolean;
+}
+
+// Nutrition data interface
+export interface NutritionData {
+  calories: number;
+  proteins: number;
+  fats: number;
+  carbohydrates: number;
 }
 
 export interface Ingredient {
@@ -173,11 +186,16 @@ export interface Allergen {
 
 export interface CreateDishRequest {
   restaurant_id: number;
-  menu_category_id: number;
+  menuCategoryId: number;
   name: string;
   price: number;
   description?: string;
   image?: string;
+  // Nutrition values (КБЖУ)
+  proteins?: number;
+  fats?: number;
+  carbohydrates?: number;
+  calories?: number;
   ingredients: Ingredient[];
   allergens?: Allergen[];
 }

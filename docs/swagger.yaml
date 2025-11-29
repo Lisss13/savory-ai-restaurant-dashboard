@@ -830,7 +830,7 @@ components:
       description: Запрос на создание блюда
       required:
         - restaurant_id
-        - menu_category_id
+        - menuCategoryId
         - name
         - price
         - ingredients
@@ -838,7 +838,7 @@ components:
         restaurant_id:
           type: integer
           description: ID ресторана
-        menu_category_id:
+        menuCategoryId:
           type: integer
           description: ID категории меню
         name:
@@ -885,7 +885,7 @@ components:
       description: Запрос на обновление блюда
       required:
         - restaurant_id
-        - menu_category_id
+        - menuCategoryId
         - name
         - price
         - ingredients
@@ -893,7 +893,7 @@ components:
         restaurant_id:
           type: integer
           description: ID ресторана
-        menu_category_id:
+        menuCategoryId:
           type: integer
           description: ID категории меню
         name:
