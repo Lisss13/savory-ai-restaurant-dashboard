@@ -60,6 +60,8 @@ tags:
     description: Управление подписками организаций
   - name: Admin
     description: Административная панель (требует роль admin)
+  - name: Support
+    description: Служба поддержки - обращения пользователей
 
 components:
   securitySchemes:
@@ -664,6 +666,9 @@ components:
         createdAt:
           type: string
           format: date-time
+        restaurantId:
+          type: integer
+          description: ID ресторана
         name:
           type: string
           description: Название категории
@@ -673,10 +678,14 @@ components:
       description: Запрос на создание категории меню
       required:
         - name
+        - restaurant_id
       properties:
         name:
           type: string
           description: Название категории
+        restaurant_id:
+          type: integer
+          description: ID ресторана
 
     # ==================== Dish ====================
     DishResponse:
@@ -685,20 +694,18 @@ components:
       properties:
         id:
           type: integer
-        createdAt:
+        created_at:
           type: string
           format: date-time
-        organization:
+        restaurant:
           type: object
-          description: Организация-владелец
+          description: Ресторан-владелец
           properties:
             id:
               type: integer
             name:
               type: string
-            phone:
-              type: string
-        menuCategory:
+        menu_category:
           type: object
           description: Категория меню
           properties:
@@ -724,6 +731,11 @@ components:
           description: Список ингредиентов
           items:
             $ref: '#/components/schemas/IngredientResponse'
+        allergens:
+          type: array
+          description: Список аллергенов
+          items:
+            $ref: '#/components/schemas/AllergenResponse'
 
     IngredientResponse:
       type: object
@@ -739,16 +751,46 @@ components:
           format: float
           description: Количество
 
+    AllergenResponse:
+      type: object
+      description: Аллерген блюда
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          description: Название аллергена
+        description:
+          type: string
+          description: Описание аллергена
+
+    AllergenRequest:
+      type: object
+      description: Аллерген для создания/обновления
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Название аллергена
+        description:
+          type: string
+          description: Описание аллергена
+
     CreateDishRequest:
       type: object
       description: Запрос на создание блюда
       required:
-        - menuCategoryId
+        - restaurant_id
+        - menu_category_id
         - name
         - price
         - ingredients
       properties:
-        menuCategoryId:
+        restaurant_id:
+          type: integer
+          description: ID ресторана
+        menu_category_id:
           type: integer
           description: ID категории меню
         name:
@@ -769,6 +811,11 @@ components:
           description: Ингредиенты
           items:
             $ref: '#/components/schemas/IngredientRequest'
+        allergens:
+          type: array
+          description: Аллергены (опционально)
+          items:
+            $ref: '#/components/schemas/AllergenRequest'
 
     IngredientRequest:
       type: object
@@ -789,26 +836,41 @@ components:
       type: object
       description: Запрос на обновление блюда
       required:
-        - menuCategoryId
+        - restaurant_id
+        - menu_category_id
         - name
         - price
         - ingredients
       properties:
-        menuCategoryId:
+        restaurant_id:
           type: integer
+          description: ID ресторана
+        menu_category_id:
+          type: integer
+          description: ID категории меню
         name:
           type: string
+          description: Название блюда
         price:
           type: number
           format: float
+          description: Цена
         description:
           type: string
+          description: Описание
         image:
           type: string
+          description: URL изображения
         ingredients:
           type: array
+          description: Ингредиенты
           items:
             $ref: '#/components/schemas/IngredientRequest'
+        allergens:
+          type: array
+          description: Аллергены (опционально)
+          items:
+            $ref: '#/components/schemas/AllergenRequest'
 
     DishByCategoryResponse:
       type: object
@@ -1434,10 +1496,12 @@ components:
           format: float
         image:
           type: string
-        organizationId:
+        restaurantId:
           type: integer
-        organizationName:
+          description: ID ресторана
+        restaurantName:
           type: string
+          description: Название ресторана
         createdAt:
           type: string
           format: date-time
@@ -1523,6 +1587,103 @@ components:
           type: string
           enum: [user, admin]
           description: Новая роль
+
+    # ==================== Support ====================
+    CreateSupportTicketRequest:
+      type: object
+      description: Запрос на создание заявки в поддержку
+      required:
+        - title
+        - description
+        - email
+      properties:
+        title:
+          type: string
+          description: Заголовок проблемы
+          example: "Не работает QR-код"
+        description:
+          type: string
+          description: Подробное описание проблемы
+          example: "При сканировании QR-кода на столе №5 появляется ошибка 404"
+        email:
+          type: string
+          format: email
+          description: Email для связи (обязательно)
+          example: "user@example.com"
+        phone:
+          type: string
+          description: Телефон для связи (опционально)
+          example: "+79001234567"
+
+    UpdateSupportTicketStatusRequest:
+      type: object
+      description: Запрос на обновление статуса заявки (только для admin)
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [in_progress, completed]
+          description: Новый статус заявки
+
+    SupportTicketResponse:
+      type: object
+      description: Данные заявки в поддержку
+      properties:
+        id:
+          type: integer
+          description: ID заявки
+        user_id:
+          type: integer
+          description: ID пользователя
+        user_name:
+          type: string
+          description: Имя пользователя
+        user_email:
+          type: string
+          description: Email пользователя из профиля
+        title:
+          type: string
+          description: Заголовок проблемы
+        description:
+          type: string
+          description: Описание проблемы
+        email:
+          type: string
+          description: Email для связи (из заявки)
+        phone:
+          type: string
+          description: Телефон для связи
+        status:
+          type: string
+          enum: [in_progress, completed]
+          description: Статус заявки
+        created_at:
+          type: string
+          format: date-time
+          description: Дата создания
+        updated_at:
+          type: string
+          format: date-time
+          description: Дата обновления
+
+    SupportTicketsListResponse:
+      type: object
+      description: Список заявок в поддержку с пагинацией
+      properties:
+        tickets:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupportTicketResponse'
+        total_count:
+          type: integer
+          description: Общее количество заявок
+        page:
+          type: integer
+          description: Текущая страница
+        page_size:
+          type: integer
+          description: Размер страницы
 
 paths:
   # ==================== Health ====================
@@ -2474,15 +2635,22 @@ paths:
                           $ref: '#/components/schemas/TableResponse'
 
   # ==================== Menu Categories ====================
-  /categories:
+  /categories/restaurant/{restaurant_id}:
     get:
       tags:
         - Menu Category
-      summary: Получить все категории меню
-      description: Возвращает список всех категорий меню организации (напитки, горячее, десерты и т.д.)
-      operationId: getAllCategories
-      security:
-        - BearerAuth: []
+      summary: Получить категории меню ресторана
+      description: |
+        Возвращает список всех категорий меню указанного ресторана.
+        **Публичный эндпоинт** - не требует авторизации.
+      operationId: getCategoriesByRestaurant
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          description: ID ресторана
+          schema:
+            type: integer
       responses:
         '200':
           description: Список категорий
@@ -2500,6 +2668,10 @@ paths:
                             type: array
                             items:
                               $ref: '#/components/schemas/MenuCategoryResponse'
+        '404':
+          description: Ресторан не найден
+
+  /categories:
     post:
       tags:
         - Menu Category
@@ -2532,10 +2704,10 @@ paths:
       tags:
         - Menu Category
       summary: Получить категорию по ID
-      description: Возвращает информацию о категории меню.
+      description: |
+        Возвращает информацию о категории меню.
+        **Публичный эндпоинт** - не требует авторизации.
       operationId: getCategoryById
-      security:
-        - BearerAuth: []
       parameters:
         - name: id
           in: path
@@ -2581,15 +2753,22 @@ paths:
           description: Категория не найдена
 
   # ==================== Dishes ====================
-  /dishes:
+  /dishes/restaurant/{restaurant_id}:
     get:
       tags:
         - Dish
-      summary: Получить все блюда
-      description: Возвращает список всех блюд организации с их ингредиентами.
-      operationId: getAllDishes
-      security:
-        - BearerAuth: []
+      summary: Получить все блюда ресторана
+      description: |
+        Возвращает список всех блюд указанного ресторана с их ингредиентами и аллергенами.
+        **Публичный эндпоинт** - не требует авторизации.
+      operationId: getDishesByRestaurant
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          description: ID ресторана
+          schema:
+            type: integer
       responses:
         '200':
           description: Список блюд
@@ -2607,6 +2786,10 @@ paths:
                             type: array
                             items:
                               $ref: '#/components/schemas/DishResponse'
+        '404':
+          description: Ресторан не найден
+
+  /dishes:
     post:
       tags:
         - Dish
@@ -2639,10 +2822,10 @@ paths:
       tags:
         - Dish
       summary: Получить блюдо по ID
-      description: Возвращает полную информацию о блюде включая ингредиенты.
+      description: |
+        Возвращает полную информацию о блюде включая ингредиенты и аллергены.
+        **Публичный эндпоинт** - не требует авторизации.
       operationId: getDishById
-      security:
-        - BearerAuth: []
       parameters:
         - name: id
           in: path
@@ -2711,15 +2894,22 @@ paths:
         '404':
           description: Блюдо не найдено
 
-  /dishes/category:
+  /dishes/category/{restaurant_id}:
     get:
       tags:
         - Dish
       summary: Получить блюда по категориям
-      description: Возвращает блюда, сгруппированные по категориям меню. Удобно для отображения меню.
+      description: |
+        Возвращает блюда ресторана, сгруппированные по категориям меню. Удобно для отображения меню.
+        **Публичный эндпоинт** - не требует авторизации.
       operationId: getDishesByCategory
-      security:
-        - BearerAuth: []
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          description: ID ресторана
+          schema:
+            type: integer
       responses:
         '200':
           description: Блюда по категориям
@@ -2733,15 +2923,22 @@ paths:
                       data:
                         $ref: '#/components/schemas/DishByCategoryResponse'
 
-  /dishes/dish-of-day:
+  /dishes/dish-of-day/{restaurant_id}:
     get:
       tags:
         - Dish
       summary: Получить блюдо дня
-      description: Возвращает текущее блюдо дня организации.
+      description: |
+        Возвращает текущее блюдо дня указанного ресторана.
+        **Публичный эндпоинт** - не требует авторизации.
       operationId: getDishOfDay
-      security:
-        - BearerAuth: []
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          description: ID ресторана
+          schema:
+            type: integer
       responses:
         '200':
           description: Блюдо дня
@@ -4381,5 +4578,205 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/AdminLogsListResponse'
+        '403':
+          description: Недостаточно прав
+
+  # ==================== Support ====================
+  /support:
+    post:
+      tags:
+        - Support
+      summary: Создать заявку в поддержку
+      description: |
+        Создаёт новую заявку в службу поддержки.
+        Заявке автоматически присваивается статус "in_progress" (взят в работу).
+        **Требует авторизацию.**
+      operationId: createSupportTicket
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSupportTicketRequest'
+      responses:
+        '201':
+          description: Заявка успешно создана
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SupportTicketResponse'
+        '400':
+          description: Ошибка валидации
+        '401':
+          description: Не авторизован
+
+  /support/my:
+    get:
+      tags:
+        - Support
+      summary: Получить мои заявки
+      description: |
+        Возвращает список заявок текущего пользователя с пагинацией.
+        **Требует авторизацию.**
+      operationId: getMySupportTickets
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          description: Размер страницы
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Список заявок
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SupportTicketsListResponse'
+        '401':
+          description: Не авторизован
+
+  /support/{id}:
+    get:
+      tags:
+        - Support
+      summary: Получить заявку по ID
+      description: |
+        Возвращает детальную информацию о заявке.
+        **Требует авторизацию.**
+      operationId: getSupportTicketById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID заявки
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Данные заявки
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SupportTicketResponse'
+        '404':
+          description: Заявка не найдена
+
+  /admin/support:
+    get:
+      tags:
+        - Support
+        - Admin
+      summary: Получить все заявки (Admin)
+      description: |
+        Возвращает список всех заявок в поддержку для администраторов.
+        Поддерживает фильтрацию по статусу.
+        **Требует роль admin.**
+      operationId: getAllSupportTickets
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Фильтр по статусу
+          schema:
+            type: string
+            enum: [in_progress, completed]
+        - name: page
+          in: query
+          description: Номер страницы
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          description: Размер страницы
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Список всех заявок
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SupportTicketsListResponse'
+        '403':
+          description: Недостаточно прав
+
+  /admin/support/{id}/status:
+    patch:
+      tags:
+        - Support
+        - Admin
+      summary: Обновить статус заявки (Admin)
+      description: |
+        Обновляет статус заявки в поддержку.
+        Доступные статусы: in_progress (взят в работу), completed (завершён).
+        **Требует роль admin.**
+      operationId: updateSupportTicketStatus
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID заявки
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSupportTicketStatusRequest'
+      responses:
+        '200':
+          description: Статус обновлён
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SupportTicketResponse'
+        '400':
+          description: Неверный статус
+        '404':
+          description: Заявка не найдена
         '403':
           description: Недостаточно прав
