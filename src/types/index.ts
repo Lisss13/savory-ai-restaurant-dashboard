@@ -122,7 +122,13 @@ export interface CreateTableRequest {
 export interface MenuCategory {
   id: number;
   createdAt: string;
+  restaurantId: number;
   name: string;
+}
+
+export interface CreateMenuCategoryRequest {
+  name: string;
+  restaurant_id: number;
 }
 
 // Dish types
@@ -160,7 +166,8 @@ export interface Allergen {
 }
 
 export interface CreateDishRequest {
-  menuCategoryId: number;
+  restaurant_id: number;
+  menu_category_id: number;
   name: string;
   price: number;
   description?: string;
@@ -181,15 +188,15 @@ export interface Reservation {
     name: string;
     capacity?: number;
   };
-  guest_name: string;
-  guest_phone: string;
-  guest_email?: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_email?: string;
   guest_count: number;
-  date: string;
-  time: string;
+  reservation_date: string;
+  start_time: string;
   end_time?: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
-  comment?: string;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  notes?: string;
   created_at?: string;
 }
 
@@ -327,4 +334,39 @@ export interface DashboardStats {
   tablesOccupied: number;
   tablesTotal: number;
   dishesCount: number;
+}
+
+// Support types
+export interface SupportTicket {
+  id: number;
+  user_id: number;
+  user_name: string;
+  user_email: string;
+  title: string;
+  description: string;
+  email: string;
+  phone?: string;
+  status: 'in_progress' | 'completed';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateSupportTicketRequest {
+  title: string;
+  description: string;
+  email: string;
+  phone?: string;
+}
+
+// Dishes by category response
+export interface DishByCategory {
+  category: {
+    id: number;
+    name: string;
+  };
+  dishes: Dish[];
+}
+
+export interface DishesByCategoryResponse {
+  dishes: DishByCategory[];
 }

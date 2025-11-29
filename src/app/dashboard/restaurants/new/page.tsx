@@ -94,7 +94,7 @@ export default function NewRestaurantPage() {
           })),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['restaurants'] });
+      queryClient.invalidateQueries({ queryKey: ['restaurants', organization?.id] });
       toast.success('Ресторан создан');
       router.push('/dashboard/restaurants');
     },

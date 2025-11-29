@@ -56,7 +56,7 @@ export default function ReservationsAnalyticsPage() {
 
   // Time distribution
   const timeDistribution = reservations?.reduce((acc: Record<string, number>, r: Reservation) => {
-    const hour = r.time?.split(':')[0] || '12';
+    const hour = r.start_time?.split(':')[0] || '12';
     const key = `${hour}:00`;
     acc[key] = (acc[key] || 0) + 1;
     return acc;
@@ -69,7 +69,7 @@ export default function ReservationsAnalyticsPage() {
   // Day of week distribution
   const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
   const dayDistribution = reservations?.reduce((acc: Record<number, number>, r: Reservation) => {
-    const day = new Date(r.date).getDay();
+    const day = new Date(r.reservation_date).getDay();
     acc[day] = (acc[day] || 0) + 1;
     return acc;
   }, {} as Record<number, number>) || {};
@@ -81,9 +81,9 @@ export default function ReservationsAnalyticsPage() {
 
   // Top guests (mock data since we don't have guest tracking)
   const guestStats = reservations?.reduce((acc: Record<string, { name: string; phone: string; visits: number }>, r: Reservation) => {
-    const key = r.guest_phone || '';
+    const key = r.customer_phone || '';
     if (!acc[key]) {
-      acc[key] = { name: r.guest_name || 'Гость', phone: r.guest_phone || '', visits: 0 };
+      acc[key] = { name: r.customer_name || 'Гость', phone: r.customer_phone || '', visits: 0 };
     }
     acc[key].visits++;
     return acc;

@@ -42,7 +42,6 @@ const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secon
   confirmed: { label: 'Подтверждено', variant: 'default' },
   cancelled: { label: 'Отменено', variant: 'destructive' },
   completed: { label: 'Завершено', variant: 'outline' },
-  no_show: { label: 'Не явился', variant: 'destructive' },
 };
 
 export default function ReservationDetailsPage() {
@@ -61,7 +60,7 @@ export default function ReservationDetailsPage() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: (status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show') => reservationApi.update(reservationId, { status }),
+    mutationFn: (status: 'pending' | 'confirmed' | 'cancelled' | 'completed') => reservationApi.update(reservationId, { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reservation', reservationId] });
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
@@ -188,26 +187,6 @@ export default function ReservationDetailsPage() {
                 </AlertDialogContent>
               </AlertDialog>
             )}
-            {reservation.status === 'confirmed' && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => updateStatusMutation.mutate('completed')}
-                  disabled={updateStatusMutation.isPending}
-                >
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Завершить
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => updateStatusMutation.mutate('no_show')}
-                  disabled={updateStatusMutation.isPending}
-                >
-                  <AlertCircle className="mr-2 h-4 w-4" />
-                  Не явился
-                </Button>
-              </>
-            )}
           </div>
         </div>
 
@@ -221,7 +200,7 @@ export default function ReservationDetailsPage() {
               <div className="flex items-center gap-3">
                 <Users className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <p className="font-medium">{reservation.guest_name}</p>
+                  <p className="font-medium">{reservation.customer_name}</p>
                   <p className="text-sm text-muted-foreground">Имя гостя</p>
                 </div>
               </div>
@@ -230,38 +209,38 @@ export default function ReservationDetailsPage() {
                 <Phone className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <a
-                    href={`tel:${reservation.guest_phone}`}
+                    href={`tel:${reservation.customer_phone}`}
                     className="font-medium hover:text-primary"
                   >
-                    {reservation.guest_phone}
+                    {reservation.customer_phone}
                   </a>
                   <p className="text-sm text-muted-foreground">Телефон</p>
                 </div>
               </div>
-              {reservation.guest_email && (
+              {reservation.customer_email && (
                 <>
                   <Separator />
                   <div className="flex items-center gap-3">
                     <Mail className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <a
-                        href={`mailto:${reservation.guest_email}`}
+                        href={`mailto:${reservation.customer_email}`}
                         className="font-medium hover:text-primary"
                       >
-                        {reservation.guest_email}
+                        {reservation.customer_email}
                       </a>
                       <p className="text-sm text-muted-foreground">Email</p>
                     </div>
                   </div>
                 </>
               )}
-              {reservation.comment && (
+              {reservation.notes && (
                 <>
                   <Separator />
                   <div className="flex items-start gap-3">
                     <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
-                      <p className="font-medium">{reservation.comment}</p>
+                      <p className="font-medium">{reservation.notes}</p>
                       <p className="text-sm text-muted-foreground">Примечание</p>
                     </div>
                   </div>
@@ -280,7 +259,7 @@ export default function ReservationDetailsPage() {
                 <Calendar className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="font-medium">
-                    {format(new Date(reservation.date), 'd MMMM yyyy', { locale: ru })}
+                    {format(new Date(reservation.reservation_date), 'd MMMM yyyy', { locale: ru })}
                   </p>
                   <p className="text-sm text-muted-foreground">Дата</p>
                 </div>
@@ -289,7 +268,7 @@ export default function ReservationDetailsPage() {
               <div className="flex items-center gap-3">
                 <Clock className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <p className="font-medium">{reservation.time}</p>
+                  <p className="font-medium">{reservation.start_time}{reservation.end_time ? ` - ${reservation.end_time}` : ''}</p>
                   <p className="text-sm text-muted-foreground">Время</p>
                 </div>
               </div>
@@ -305,7 +284,7 @@ export default function ReservationDetailsPage() {
               <div className="flex items-center gap-3">
                 <Armchair className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <p className="font-medium">{reservation.table?.name || '—'}</p>
+                  <p className="font-medium">{reservation.table_name || '—'}</p>
                   <p className="text-sm text-muted-foreground">Столик</p>
                 </div>
               </div>

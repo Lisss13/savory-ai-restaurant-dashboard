@@ -39,26 +39,30 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { restaurantApi } from '@/lib/api';
+import { useAuthStore } from '@/store/auth';
 import { useRestaurantStore } from '@/store/restaurant';
 import type { Restaurant } from '@/types';
 
 export default function RestaurantsPage() {
   const queryClient = useQueryClient();
+  const { organization } = useAuthStore();
   const { selectedRestaurant, setSelectedRestaurant } = useRestaurantStore();
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const { data: restaurants, isLoading } = useQuery({
-    queryKey: ['restaurants'],
+    queryKey: ['restaurants', organization?.id],
     queryFn: async () => {
-      const response = await restaurantApi.getAll();
+      if (!organization?.id) return [];
+      const response = await restaurantApi.getByOrganization(organization.id);
       return response.data.restaurants;
     },
+    enabled: !!organization?.id,
   });
 
   const deleteMutation = useMutation({
     mutationFn: restaurantApi.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['restaurants'] });
+      queryClient.invalidateQueries({ queryKey: ['restaurants', organization?.id] });
       toast.success('Ресторан удалён');
       setDeleteId(null);
     },

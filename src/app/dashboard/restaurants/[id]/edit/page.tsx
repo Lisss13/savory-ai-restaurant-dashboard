@@ -24,6 +24,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { restaurantApi, uploadApi } from '@/lib/api';
+import { useAuthStore } from '@/store/auth';
 
 const DAYS_OF_WEEK = [
   { value: 0, label: 'Воскресенье' },
@@ -65,6 +66,7 @@ export default function EditRestaurantPage() {
   const router = useRouter();
   const params = useParams();
   const queryClient = useQueryClient();
+  const { organization } = useAuthStore();
   const restaurantId = Number(params.id);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -138,7 +140,7 @@ export default function EditRestaurantPage() {
           })),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['restaurants'] });
+      queryClient.invalidateQueries({ queryKey: ['restaurants', organization?.id] });
       queryClient.invalidateQueries({ queryKey: ['restaurant', restaurantId] });
       toast.success('Ресторан обновлён');
       router.push('/dashboard/restaurants');

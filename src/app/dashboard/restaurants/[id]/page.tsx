@@ -98,7 +98,7 @@ export default function RestaurantDetailPage() {
   const getTodayReservationsCount = () => {
     if (!reservations) return 0;
     const today = new Date().toISOString().split('T')[0];
-    return reservations.filter((r: Reservation) => r.date === today && r.status !== 'cancelled').length;
+    return reservations.filter((r: Reservation) => r.reservation_date === today && r.status !== 'cancelled').length;
   };
 
   const getActiveChatsCount = () => {

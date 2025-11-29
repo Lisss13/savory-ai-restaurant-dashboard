@@ -11,8 +11,10 @@ import type {
   Table,
   CreateTableRequest,
   MenuCategory,
+  CreateMenuCategoryRequest,
   Dish,
   CreateDishRequest,
+  DishesByCategoryResponse,
   Reservation,
   CreateReservationRequest,
   AvailableSlot,
@@ -24,6 +26,8 @@ import type {
   AdminStats,
   AdminLog,
   Language,
+  SupportTicket,
+  CreateSupportTicketRequest,
 } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
@@ -176,6 +180,11 @@ export const restaurantApi = {
     return response.data;
   },
 
+  getByOrganization: async (organizationId: number): Promise<ApiResponse<{ restaurants: Restaurant[] }>> => {
+    const response = await apiClient.get(`/restaurants/organization/${organizationId}`);
+    return response.data;
+  },
+
   getById: async (id: number): Promise<ApiResponse<Restaurant>> => {
     const response = await apiClient.get(`/restaurants/${id}`);
     return response.data;
@@ -232,13 +241,18 @@ export const tableApi = {
 
 // Menu Category API
 export const categoryApi = {
-  getAll: async (): Promise<ApiResponse<{ categories: MenuCategory[] }>> => {
-    const response = await apiClient.get('/categories');
+  getByRestaurant: async (restaurantId: number): Promise<ApiResponse<{ categories: MenuCategory[] }>> => {
+    const response = await apiClient.get(`/categories/restaurant/${restaurantId}`);
     return response.data;
   },
 
-  create: async (name: string): Promise<ApiResponse<MenuCategory>> => {
-    const response = await apiClient.post('/categories', { name });
+  getById: async (id: number): Promise<ApiResponse<MenuCategory>> => {
+    const response = await apiClient.get(`/categories/${id}`);
+    return response.data;
+  },
+
+  create: async (data: CreateMenuCategoryRequest): Promise<ApiResponse<MenuCategory>> => {
+    const response = await apiClient.post('/categories', data);
     return response.data;
   },
 
@@ -250,13 +264,13 @@ export const categoryApi = {
 
 // Dish API
 export const dishApi = {
-  getAll: async (): Promise<ApiResponse<{ dishes: Dish[] }>> => {
-    const response = await apiClient.get('/dishes');
+  getByRestaurant: async (restaurantId: number): Promise<ApiResponse<{ dishes: Dish[] }>> => {
+    const response = await apiClient.get(`/dishes/restaurant/${restaurantId}`);
     return response.data;
   },
 
-  getByCategory: async (categoryId: number): Promise<ApiResponse<{ dishes: Dish[] }>> => {
-    const response = await apiClient.get(`/dishes/category?categoryId=${categoryId}`);
+  getByCategory: async (restaurantId: number): Promise<ApiResponse<DishesByCategoryResponse>> => {
+    const response = await apiClient.get(`/dishes/category/${restaurantId}`);
     return response.data;
   },
 
@@ -280,6 +294,11 @@ export const dishApi = {
     return response.data;
   },
 
+  getDishOfDay: async (restaurantId: number): Promise<ApiResponse<Dish>> => {
+    const response = await apiClient.get(`/dishes/dish-of-day/${restaurantId}`);
+    return response.data;
+  },
+
   setDishOfDay: async (id: number): Promise<ApiResponse<void>> => {
     const response = await apiClient.post(`/dishes/dish-of-day/${id}`);
     return response.data;
@@ -288,6 +307,11 @@ export const dishApi = {
 
 // Reservation API
 export const reservationApi = {
+  getAll: async (): Promise<ApiResponse<{ reservations: Reservation[] }>> => {
+    const response = await apiClient.get('/reservations');
+    return response.data;
+  },
+
   getByRestaurant: async (restaurantId: number): Promise<ApiResponse<{ reservations: Reservation[] }>> => {
     const response = await apiClient.get(`/reservations/restaurant/${restaurantId}`);
     return response.data;
@@ -298,8 +322,15 @@ export const reservationApi = {
     return response.data;
   },
 
-  getAvailableSlots: async (restaurantId: number, date: string, guestCount: number): Promise<ApiResponse<{ slots: AvailableSlot[] }>> => {
-    const response = await apiClient.get(`/reservations/available/${restaurantId}?date=${date}&guest_count=${guestCount}`);
+  getAvailableSlots: async (restaurantId: number, date: string, guestCount?: number): Promise<ApiResponse<{ restaurant_id: number; restaurant_name: string; date: string; slots: AvailableSlot[] }>> => {
+    const params = new URLSearchParams({ date });
+    if (guestCount) params.append('guest_count', guestCount.toString());
+    const response = await apiClient.get(`/reservations/available/${restaurantId}?${params}`);
+    return response.data;
+  },
+
+  getMyReservations: async (phone: string): Promise<ApiResponse<{ reservations: Reservation[] }>> => {
+    const response = await apiClient.get(`/reservations/my?phone=${encodeURIComponent(phone)}`);
     return response.data;
   },
 
@@ -313,8 +344,13 @@ export const reservationApi = {
     return response.data;
   },
 
-  cancel: async (id: number): Promise<ApiResponse<void>> => {
+  cancel: async (id: number): Promise<ApiResponse<Reservation>> => {
     const response = await apiClient.post(`/reservations/${id}/cancel`);
+    return response.data;
+  },
+
+  cancelByPhone: async (id: number, phone: string): Promise<ApiResponse<Reservation>> => {
+    const response = await apiClient.post(`/reservations/${id}/cancel/public`, { phone });
     return response.data;
   },
 
@@ -422,6 +458,16 @@ export const qrCodeApi = {
 
 // Subscription API
 export const subscriptionApi = {
+  getAll: async (): Promise<ApiResponse<{ subscriptions: Subscription[] }>> => {
+    const response = await apiClient.get('/subscriptions');
+    return response.data;
+  },
+
+  getById: async (id: number): Promise<ApiResponse<Subscription>> => {
+    const response = await apiClient.get(`/subscriptions/${id}`);
+    return response.data;
+  },
+
   getByOrganization: async (orgId: number): Promise<ApiResponse<Subscription[]>> => {
     const response = await apiClient.get(`/subscriptions/organization/${orgId}`);
     return response.data;
@@ -432,8 +478,28 @@ export const subscriptionApi = {
     return response.data;
   },
 
+  create: async (data: { organizationId: number; period: number; startDate: string }): Promise<ApiResponse<Subscription>> => {
+    const response = await apiClient.post('/subscriptions', data);
+    return response.data;
+  },
+
+  update: async (id: number, data: { period: number; startDate: string; isActive?: boolean }): Promise<ApiResponse<Subscription>> => {
+    const response = await apiClient.put(`/subscriptions/${id}`, data);
+    return response.data;
+  },
+
   extend: async (subscriptionId: number, period: number): Promise<ApiResponse<Subscription>> => {
     const response = await apiClient.post(`/subscriptions/${subscriptionId}/extend`, { period });
+    return response.data;
+  },
+
+  deactivate: async (subscriptionId: number): Promise<ApiResponse<void>> => {
+    const response = await apiClient.post(`/subscriptions/${subscriptionId}/deactivate`);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<ApiResponse<void>> => {
+    const response = await apiClient.delete(`/subscriptions/${id}`);
     return response.data;
   },
 };
@@ -516,6 +582,37 @@ export const adminApi = {
 
   getMyLogs: async (page = 1, pageSize = 20): Promise<ApiResponse<{ logs: AdminLog[]; totalCount: number; page: number; pageSize: number }>> => {
     const response = await apiClient.get(`/admin/logs/me?page=${page}&pageSize=${pageSize}`);
+    return response.data;
+  },
+
+  // Admin Support methods
+  getSupportTickets: async (page = 1, pageSize = 10, status?: 'in_progress' | 'completed'): Promise<ApiResponse<{ tickets: SupportTicket[]; total_count: number; page: number; page_size: number }>> => {
+    const params = new URLSearchParams({ page: page.toString(), page_size: pageSize.toString() });
+    if (status) params.append('status', status);
+    const response = await apiClient.get(`/admin/support?${params}`);
+    return response.data;
+  },
+
+  updateSupportTicketStatus: async (id: number, status: 'in_progress' | 'completed'): Promise<ApiResponse<SupportTicket>> => {
+    const response = await apiClient.patch(`/admin/support/${id}/status`, { status });
+    return response.data;
+  },
+};
+
+// Support API
+export const supportApi = {
+  create: async (data: CreateSupportTicketRequest): Promise<ApiResponse<SupportTicket>> => {
+    const response = await apiClient.post('/support', data);
+    return response.data;
+  },
+
+  getMy: async (page = 1, pageSize = 10): Promise<ApiResponse<{ tickets: SupportTicket[]; total_count: number; page: number; page_size: number }>> => {
+    const response = await apiClient.get(`/support/my?page=${page}&page_size=${pageSize}`);
+    return response.data;
+  },
+
+  getById: async (id: number): Promise<ApiResponse<SupportTicket>> => {
+    const response = await apiClient.get(`/support/${id}`);
     return response.data;
   },
 };

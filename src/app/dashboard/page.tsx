@@ -86,11 +86,13 @@ export default function DashboardPage() {
   const { selectedRestaurant, setSelectedRestaurant, setRestaurants } = useRestaurantStore();
 
   const { data: restaurantsData, isLoading: restaurantsLoading } = useQuery({
-    queryKey: ['restaurants'],
+    queryKey: ['restaurants', organization?.id],
     queryFn: async () => {
-      const response = await restaurantApi.getAll();
+      if (!organization?.id) return [];
+      const response = await restaurantApi.getByOrganization(organization.id);
       return response.data.restaurants;
     },
+    enabled: !!organization?.id,
   });
 
   useEffect(() => {
@@ -133,16 +135,18 @@ export default function DashboardPage() {
   });
 
   const { data: dishes, isLoading: dishesLoading } = useQuery({
-    queryKey: ['dishes'],
+    queryKey: ['dishes', selectedRestaurant?.id],
     queryFn: async () => {
-      const response = await dishApi.getAll();
+      if (!selectedRestaurant) return [];
+      const response = await dishApi.getByRestaurant(selectedRestaurant.id);
       return response.data.dishes;
     },
+    enabled: !!selectedRestaurant,
   });
 
   const todayReservations = reservations?.filter((r: Reservation) => {
     const today = new Date().toISOString().split('T')[0];
-    return r.date === today;
+    return r.reservation_date === today;
   }) || [];
 
   const activeChats = chatSessions?.filter((c: ChatSession) => c.active) || [];
@@ -276,10 +280,10 @@ export default function DashboardPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium truncate">
-                              {reservation.guest_name}
+                              {reservation.customer_name}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {reservation.date} в {reservation.time} • {reservation.guest_count} гостей
+                              {reservation.reservation_date} в {reservation.start_time} • {reservation.guest_count} гостей
                             </p>
                           </div>
                           <Badge

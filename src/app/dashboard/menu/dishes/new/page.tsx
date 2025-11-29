@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { dishApi, categoryApi, uploadApi } from '@/lib/api';
+import { useRestaurantStore } from '@/store/restaurant';
 import type { MenuCategory } from '@/types';
 
 const COMMON_ALLERGENS = [
@@ -68,6 +69,7 @@ type DishFormValues = z.infer<typeof dishSchema>;
 export default function NewDishPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { selectedRestaurant } = useRestaurantStore();
   const [isUploading, setIsUploading] = useState(false);
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
 
@@ -92,17 +94,20 @@ export default function NewDishPage() {
     });
 
   const { data: categories } = useQuery({
-    queryKey: ['categories'],
+    queryKey: ['categories', selectedRestaurant?.id],
     queryFn: async () => {
-      const response = await categoryApi.getAll();
+      if (!selectedRestaurant) return [];
+      const response = await categoryApi.getByRestaurant(selectedRestaurant.id);
       return response.data.categories;
     },
+    enabled: !!selectedRestaurant,
   });
 
   const createMutation = useMutation({
     mutationFn: (data: DishFormValues) =>
       dishApi.create({
-        menuCategoryId: parseInt(data.menuCategoryId),
+        restaurant_id: selectedRestaurant!.id,
+        menu_category_id: parseInt(data.menuCategoryId),
         name: data.name,
         price: data.price,
         description: data.description,
@@ -111,7 +116,7 @@ export default function NewDishPage() {
         allergens: selectedAllergens.map((name) => ({ name })),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dishes'] });
+      queryClient.invalidateQueries({ queryKey: ['dishes', selectedRestaurant?.id] });
       toast.success('Блюдо создано');
       router.push('/dashboard/menu/dishes');
     },

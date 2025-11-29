@@ -74,24 +74,24 @@ export default function TablesPage() {
     const todayReservations = reservations?.filter(
       (r: Reservation) =>
         r.table_id === tableId &&
-        r.date === today &&
+        r.reservation_date === today &&
         r.status !== 'cancelled'
     );
 
     const currentReservation = todayReservations?.find(
-      (r: Reservation) => r.time <= currentTime && (r.end_time || '23:59') > currentTime
+      (r: Reservation) => r.start_time <= currentTime && (r.end_time || '23:59') > currentTime
     );
 
     const nextReservation = todayReservations
-      ?.filter((r: Reservation) => r.time > currentTime)
-      .sort((a: Reservation, b: Reservation) => a.time.localeCompare(b.time))[0];
+      ?.filter((r: Reservation) => r.start_time > currentTime)
+      .sort((a: Reservation, b: Reservation) => a.start_time.localeCompare(b.start_time))[0];
 
     if (currentReservation) {
       return { status: 'occupied', color: 'destructive', text: 'Занят' };
     }
 
     if (nextReservation) {
-      return { status: 'reserved', color: 'warning', text: `Бронь в ${nextReservation.time}` };
+      return { status: 'reserved', color: 'warning', text: `Бронь в ${nextReservation.start_time}` };
     }
 
     return { status: 'free', color: 'success', text: 'Свободен' };

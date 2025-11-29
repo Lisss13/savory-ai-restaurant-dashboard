@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -15,6 +16,7 @@ import {
   Eye,
   Phone,
   CalendarIcon,
+  Clock,
 } from 'lucide-react';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
@@ -68,7 +70,6 @@ const STATUS_MAP = {
   confirmed: { label: 'Подтверждено', variant: 'default' as const },
   cancelled: { label: 'Отменено', variant: 'destructive' as const },
   completed: { label: 'Завершено', variant: 'outline' as const },
-  no_show: { label: 'Не явился', variant: 'destructive' as const },
 };
 
 interface CreateReservationForm {
@@ -83,6 +84,7 @@ interface CreateReservationForm {
 }
 
 export default function ReservationsListPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { selectedRestaurant } = useRestaurantStore();
   const [search, setSearch] = useState('');
@@ -195,15 +197,15 @@ export default function ReservationsListPage() {
   };
 
   const filteredReservations = reservations?.filter((r: Reservation) => {
-    const guestName = r.guest_name || '';
-    const guestPhone = r.guest_phone || '';
+    const customerName = r.customer_name || '';
+    const customerPhone = r.customer_phone || '';
     const matchesSearch =
       !search ||
-      guestName.toLowerCase().includes(search.toLowerCase()) ||
-      guestPhone.includes(search);
+      customerName.toLowerCase().includes(search.toLowerCase()) ||
+      customerPhone.includes(search);
     const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
     const matchesDate =
-      !dateFilter || r.date === format(dateFilter, 'yyyy-MM-dd');
+      !dateFilter || r.reservation_date === format(dateFilter, 'yyyy-MM-dd');
     return matchesSearch && matchesStatus && matchesDate;
   });
 
@@ -333,22 +335,25 @@ export default function ReservationsListPage() {
                   {filteredReservations?.map((reservation: Reservation) => (
                     <TableRow key={reservation.id}>
                       <TableCell>
-                        {reservation.date ? format(new Date(reservation.date), 'dd.MM.yyyy') : '—'}
+                        {reservation.reservation_date ? format(new Date(reservation.reservation_date), 'dd.MM.yyyy') : '—'}
                       </TableCell>
                       <TableCell>
-                        {reservation.time || '—'} - {reservation.end_time || '—'}
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          <span>{reservation.start_time || '—'} - {reservation.end_time || '—'}</span>
+                        </div>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {reservation.guest_name || '—'}
+                        {reservation.customer_name || '—'}
                       </TableCell>
                       <TableCell>
-                        {reservation.guest_phone ? (
+                        {reservation.customer_phone ? (
                           <a
-                            href={`tel:${reservation.guest_phone}`}
+                            href={`tel:${reservation.customer_phone}`}
                             className="flex items-center gap-1 hover:text-primary"
                           >
                             <Phone className="h-3 w-3" />
-                            {reservation.guest_phone}
+                            {reservation.customer_phone}
                           </a>
                         ) : '—'}
                       </TableCell>
@@ -369,7 +374,9 @@ export default function ReservationsListPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => router.push(`/dashboard/reservations/${reservation.id}`)}
+                            >
                               <Eye className="mr-2 h-4 w-4" />
                               Подробнее
                             </DropdownMenuItem>
@@ -385,19 +392,6 @@ export default function ReservationsListPage() {
                               >
                                 <Check className="mr-2 h-4 w-4" />
                                 Подтвердить
-                              </DropdownMenuItem>
-                            )}
-                            {reservation.status === 'confirmed' && (
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  updateStatusMutation.mutate({
-                                    id: reservation.id,
-                                    status: 'completed',
-                                  })
-                                }
-                              >
-                                <Check className="mr-2 h-4 w-4" />
-                                Завершить
                               </DropdownMenuItem>
                             )}
                             {(reservation.status === 'pending' ||

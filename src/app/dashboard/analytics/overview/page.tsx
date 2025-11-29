@@ -123,22 +123,19 @@ export default function AnalyticsOverviewPage() {
   const totalReservations = reservations?.length || 0;
   const confirmedReservations = reservations?.filter((r: { status: string }) => r.status === 'confirmed').length || 0;
   const cancelledReservations = reservations?.filter((r: { status: string }) => r.status === 'cancelled').length || 0;
-  const noShowReservations = reservations?.filter((r: { status: string }) => r.status === 'no_show').length || 0;
+  const completedReservations = reservations?.filter((r: { status: string }) => r.status === 'completed').length || 0;
+  const pendingReservations = reservations?.filter((r: { status: string }) => r.status === 'pending').length || 0;
   const totalChats = chatSessions?.length || 0;
 
   // Generate chart data
   const chartData = Array.from({ length: parseInt(period) }, (_, i) => {
     const date = subDays(new Date(), parseInt(period) - 1 - i);
     const dateStr = format(date, 'yyyy-MM-dd');
-    const dayReservations = reservations?.filter((r: { date: string }) => {
-      if (!r.date) return false;
-      try {
-        const rDate = new Date(r.date);
-        if (isNaN(rDate.getTime())) return false;
-        return format(rDate, 'yyyy-MM-dd') === dateStr;
-      } catch {
-        return false;
-      }
+    const dayReservations = reservations?.filter((r: { reservation_date: string }) => {
+      if (!r.reservation_date) return false;
+      // Сравниваем строки напрямую, т.к. reservation_date уже в формате yyyy-MM-dd
+      const rDateStr = r.reservation_date.split('T')[0]; // На случай если приходит ISO формат
+      return rDateStr === dateStr;
     }).length || 0;
 
     return {
@@ -150,9 +147,9 @@ export default function AnalyticsOverviewPage() {
   // Status distribution for pie chart
   const statusData = [
     { name: 'Подтверждено', value: confirmedReservations },
+    { name: 'Завершено', value: completedReservations },
     { name: 'Отменено', value: cancelledReservations },
-    { name: 'Не явился', value: noShowReservations },
-    { name: 'Ожидает', value: totalReservations - confirmedReservations - cancelledReservations - noShowReservations },
+    { name: 'Ожидает', value: pendingReservations },
   ].filter((d) => d.value > 0);
 
   if (!selectedRestaurant) {
@@ -228,8 +225,8 @@ export default function AnalyticsOverviewPage() {
             loading={isLoading}
           />
           <StatCard
-            title="No-show rate"
-            value={totalReservations > 0 ? `${Math.round((noShowReservations / totalReservations) * 100)}%` : '0%'}
+            title="Процент отмен"
+            value={totalReservations > 0 ? `${Math.round((cancelledReservations / totalReservations) * 100)}%` : '0%'}
             icon={<Armchair className="h-4 w-4" />}
             loading={isLoading}
           />
@@ -246,12 +243,16 @@ export default function AnalyticsOverviewPage() {
             <CardContent>
               {isLoading ? (
                 <Skeleton className="h-[300px] w-full" />
+              ) : chartData.every(d => d.reservations === 0) ? (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  Нет бронирований за выбранный период
+                </div>
               ) : (
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
-                    <YAxis />
+                    <YAxis allowDecimals={false} />
                     <Tooltip />
                     <Line
                       type="monotone"
@@ -259,6 +260,7 @@ export default function AnalyticsOverviewPage() {
                       stroke="#8884d8"
                       strokeWidth={2}
                       name="Бронирования"
+                      dot={{ fill: '#8884d8', strokeWidth: 2 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>

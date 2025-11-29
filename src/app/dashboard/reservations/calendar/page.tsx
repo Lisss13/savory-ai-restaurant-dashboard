@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, Clock, Users } from 'lucide-react';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,7 +26,6 @@ const STATUS_COLORS: Record<string, string> = {
   confirmed: 'bg-blue-500',
   cancelled: 'bg-red-500',
   completed: 'bg-green-500',
-  no_show: 'bg-gray-500',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -34,7 +33,6 @@ const STATUS_LABELS: Record<string, string> = {
   confirmed: 'Подтверждено',
   cancelled: 'Отменено',
   completed: 'Завершено',
-  no_show: 'Не явился',
 };
 
 export default function ReservationsCalendarPage() {
@@ -75,7 +73,7 @@ export default function ReservationsCalendarPage() {
 
   const getReservationsForDayAndTable = (date: Date, tableId: number) => {
     return filteredReservations.filter((r: Reservation) => {
-      const reservationDate = new Date(r.date);
+      const reservationDate = new Date(r.reservation_date);
       return isSameDay(reservationDate, date) && r.table?.id === tableId;
     });
   };
@@ -209,12 +207,19 @@ export default function ReservationsCalendarPage() {
                                 {dayReservations.map((reservation: Reservation) => (
                                   <div
                                     key={reservation.id}
-                                    className={`text-xs p-1 rounded text-white ${
+                                    className={`text-xs p-1.5 rounded text-white ${
                                       STATUS_COLORS[reservation.status] || 'bg-gray-500'
                                     }`}
                                   >
-                                    <div className="font-medium">{reservation.time}</div>
-                                    <div className="truncate">{reservation.guest_name}</div>
+                                    <div className="flex items-center gap-1 font-bold bg-black/20 rounded px-1 py-0.5 mb-1">
+                                      <Clock className="h-3 w-3" />
+                                      <span>{reservation.start_time}{reservation.end_time && ` - ${reservation.end_time}`}</span>
+                                    </div>
+                                    <div className="truncate">{reservation.customer_name}</div>
+                                    <div className="flex items-center gap-1 opacity-80">
+                                      <Users className="h-3 w-3" />
+                                      {reservation.guest_count} чел.
+                                    </div>
                                   </div>
                                 ))}
                               </div>

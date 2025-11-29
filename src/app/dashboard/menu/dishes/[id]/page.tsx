@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { dishApi, categoryApi, uploadApi } from '@/lib/api';
+import { useRestaurantStore } from '@/store/restaurant';
 import type { MenuCategory } from '@/types';
 
 const COMMON_ALLERGENS = [
@@ -64,6 +65,7 @@ export default function EditDishPage() {
   const router = useRouter();
   const params = useParams();
   const queryClient = useQueryClient();
+  const { selectedRestaurant } = useRestaurantStore();
   const dishId = Number(params.id);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
@@ -78,11 +80,13 @@ export default function EditDishPage() {
   });
 
   const { data: categories } = useQuery({
-    queryKey: ['categories'],
+    queryKey: ['categories', selectedRestaurant?.id],
     queryFn: async () => {
-      const response = await categoryApi.getAll();
+      if (!selectedRestaurant) return [];
+      const response = await categoryApi.getByRestaurant(selectedRestaurant.id);
       return response.data.categories;
     },
+    enabled: !!selectedRestaurant,
   });
 
   const form = useForm<DishFormValues>({
@@ -124,7 +128,8 @@ export default function EditDishPage() {
   const updateMutation = useMutation({
     mutationFn: (data: DishFormValues) =>
       dishApi.update(dishId, {
-        menuCategoryId: parseInt(data.menuCategoryId),
+        restaurant_id: selectedRestaurant!.id,
+        menu_category_id: parseInt(data.menuCategoryId),
         name: data.name,
         price: data.price,
         description: data.description,
@@ -133,7 +138,7 @@ export default function EditDishPage() {
         allergens: selectedAllergens.map((name) => ({ name })),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dishes'] });
+      queryClient.invalidateQueries({ queryKey: ['dishes', selectedRestaurant?.id] });
       queryClient.invalidateQueries({ queryKey: ['dish', dishId] });
       toast.success('Блюдо обновлено');
       router.push('/dashboard/menu/dishes');

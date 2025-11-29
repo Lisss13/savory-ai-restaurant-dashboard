@@ -51,34 +51,40 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { dishApi, categoryApi } from '@/lib/api';
+import { useRestaurantStore } from '@/store/restaurant';
 import type { Dish, MenuCategory } from '@/types';
 
 export default function DishesPage() {
   const queryClient = useQueryClient();
+  const { selectedRestaurant } = useRestaurantStore();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const { data: dishes, isLoading: dishesLoading } = useQuery({
-    queryKey: ['dishes'],
+    queryKey: ['dishes', selectedRestaurant?.id],
     queryFn: async () => {
-      const response = await dishApi.getAll();
+      if (!selectedRestaurant) return [];
+      const response = await dishApi.getByRestaurant(selectedRestaurant.id);
       return response.data.dishes;
     },
+    enabled: !!selectedRestaurant,
   });
 
   const { data: categories } = useQuery({
-    queryKey: ['categories'],
+    queryKey: ['categories', selectedRestaurant?.id],
     queryFn: async () => {
-      const response = await categoryApi.getAll();
+      if (!selectedRestaurant) return [];
+      const response = await categoryApi.getByRestaurant(selectedRestaurant.id);
       return response.data.categories;
     },
+    enabled: !!selectedRestaurant,
   });
 
   const deleteMutation = useMutation({
     mutationFn: dishApi.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dishes'] });
+      queryClient.invalidateQueries({ queryKey: ['dishes', selectedRestaurant?.id] });
       toast.success('Блюдо удалено');
       setDeleteId(null);
     },
@@ -90,13 +96,31 @@ export default function DishesPage() {
   const dishOfDayMutation = useMutation({
     mutationFn: dishApi.setDishOfDay,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dishes'] });
+      queryClient.invalidateQueries({ queryKey: ['dishes', selectedRestaurant?.id] });
       toast.success('Блюдо дня обновлено');
     },
     onError: () => {
       toast.error('Ошибка при установке блюда дня');
     },
   });
+
+  if (!selectedRestaurant) {
+    return (
+      <>
+        <Header breadcrumbs={[{ title: 'Дашборд', href: '/dashboard' }, { title: 'Меню' }, { title: 'Блюда' }]} />
+        <main className="flex-1 p-6">
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-10">
+              <h3 className="text-lg font-semibold mb-2">Выберите ресторан</h3>
+              <p className="text-muted-foreground text-center">
+                Для управления блюдами необходимо выбрать ресторан
+              </p>
+            </CardContent>
+          </Card>
+        </main>
+      </>
+    );
+  }
 
   const filteredDishes = dishes?.filter((dish: Dish) => {
     const matchesSearch = dish.name.toLowerCase().includes(search.toLowerCase());

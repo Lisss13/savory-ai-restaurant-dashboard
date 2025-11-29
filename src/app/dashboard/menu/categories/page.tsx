@@ -29,29 +29,35 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { categoryApi, dishApi } from '@/lib/api';
+import { useRestaurantStore } from '@/store/restaurant';
 import type { MenuCategory, Dish } from '@/types';
 
 export default function CategoriesPage() {
   const queryClient = useQueryClient();
+  const { selectedRestaurant } = useRestaurantStore();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editCategory, setEditCategory] = useState<MenuCategory | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
 
   const { data: categories, isLoading } = useQuery({
-    queryKey: ['categories'],
+    queryKey: ['categories', selectedRestaurant?.id],
     queryFn: async () => {
-      const response = await categoryApi.getAll();
+      if (!selectedRestaurant) return [];
+      const response = await categoryApi.getByRestaurant(selectedRestaurant.id);
       return response.data.categories;
     },
+    enabled: !!selectedRestaurant,
   });
 
   const { data: dishes } = useQuery({
-    queryKey: ['dishes'],
+    queryKey: ['dishes', selectedRestaurant?.id],
     queryFn: async () => {
-      const response = await dishApi.getAll();
+      if (!selectedRestaurant) return [];
+      const response = await dishApi.getByRestaurant(selectedRestaurant.id);
       return response.data.dishes;
     },
+    enabled: !!selectedRestaurant,
   });
 
   const getDishCount = (categoryId: number) => {
@@ -59,9 +65,9 @@ export default function CategoriesPage() {
   };
 
   const createMutation = useMutation({
-    mutationFn: (name: string) => categoryApi.create(name),
+    mutationFn: (name: string) => categoryApi.create({ name, restaurant_id: selectedRestaurant!.id }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['categories', selectedRestaurant?.id] });
       toast.success('Категория создана');
       setIsCreateOpen(false);
       setNewCategoryName('');
@@ -74,7 +80,7 @@ export default function CategoriesPage() {
   const deleteMutation = useMutation({
     mutationFn: categoryApi.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['categories', selectedRestaurant?.id] });
       toast.success('Категория удалена');
       setDeleteId(null);
     },
@@ -82,6 +88,24 @@ export default function CategoriesPage() {
       toast.error('Ошибка при удалении категории');
     },
   });
+
+  if (!selectedRestaurant) {
+    return (
+      <>
+        <Header breadcrumbs={[{ title: 'Дашборд', href: '/dashboard' }, { title: 'Меню' }, { title: 'Категории' }]} />
+        <main className="flex-1 p-6">
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-10">
+              <h3 className="text-lg font-semibold mb-2">Выберите ресторан</h3>
+              <p className="text-muted-foreground text-center">
+                Для управления категориями меню необходимо выбрать ресторан
+              </p>
+            </CardContent>
+          </Card>
+        </main>
+      </>
+    );
+  }
 
   const handleCreate = () => {
     if (!newCategoryName.trim()) {

@@ -1,0 +1,112 @@
+[
+  {
+    "id": "TASK_1",
+    "priority": "LOW",
+    "tags": [],
+    "title": "Сделать раздел службы поддержки ",
+    "description": "",
+    "status": "TODO",
+    "date": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 29
+      },
+      "time": {
+        "hour": 14,
+        "minute": 11,
+        "second": 26,
+        "nano": 632441000
+      }
+    },
+    "isImported": false
+  },
+  {
+    "id": "TASK_3",
+    "priority": "LOW",
+    "tags": [],
+    "title": "Испрвить ошибку ступара при выходе из системы ",
+    "description": "",
+    "status": "TODO",
+    "date": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 29
+      },
+      "time": {
+        "hour": 14,
+        "minute": 12,
+        "second": 37,
+        "nano": 289098000
+      }
+    },
+    "isImported": false
+  },
+  {
+    "id": "TASK_6",
+    "priority": "LOW",
+    "tags": [],
+    "title": "сделать перетаскивание для категорий меню ",
+    "description": "",
+    "status": "TODO",
+    "date": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 29
+      },
+      "time": {
+        "hour": 14,
+        "minute": 15,
+        "second": 14,
+        "nano": 158773000
+      }
+    },
+    "isImported": false
+  },
+  {
+    "id": "TASK_10",
+    "priority": "LOW",
+    "tags": [],
+    "title": "проверить работу бронирования ",
+    "description": "",
+    "status": "IN_PROGRESS",
+    "date": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 29
+      },
+      "time": {
+        "hour": 14,
+        "minute": 16,
+        "second": 24,
+        "nano": 206387000
+      }
+    },
+    "isImported": false
+  },
+  {
+    "id": "TASK_19",
+    "priority": "HIGH",
+    "tags": [],
+    "title": "Сделать перетаскивание по вопросом которые отправляются пользователю что бы можно было задавать порядок ",
+    "description": "",
+    "status": "TODO",
+    "date": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 29
+      },
+      "time": {
+        "hour": 14,
+        "minute": 28,
+        "second": 58,
+        "nano": 612336000
+      }
+    },
+    "isImported": false
+  }
+]
