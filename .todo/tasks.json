@@ -27,7 +27,7 @@
     "tags": [],
     "title": "Испрвить ошибку ступара при выходе из системы ",
     "description": "",
-    "status": "TODO",
+    "status": "IN_PROGRESS",
     "date": {
       "date": {
         "year": 2025,
@@ -71,7 +71,7 @@
     "tags": [],
     "title": "проверить работу бронирования ",
     "description": "",
-    "status": "IN_PROGRESS",
+    "status": "DONE",
     "date": {
       "date": {
         "year": 2025,
@@ -83,6 +83,19 @@
         "minute": 16,
         "second": 24,
         "nano": 206387000
+      }
+    },
+    "finishDate": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 29
+      },
+      "time": {
+        "hour": 14,
+        "minute": 51,
+        "second": 59,
+        "nano": 632987000
       }
     },
     "isImported": false
@@ -105,6 +118,28 @@
         "minute": 28,
         "second": 58,
         "nano": 612336000
+      }
+    },
+    "isImported": false
+  },
+  {
+    "id": "TASK_51",
+    "priority": "LOW",
+    "tags": [],
+    "title": "Показывать в шапке текуший выбранный ресторан ",
+    "description": "",
+    "status": "TODO",
+    "date": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 29
+      },
+      "time": {
+        "hour": 14,
+        "minute": 58,
+        "second": 58,
+        "nano": 801405000
       }
     },
     "isImported": false

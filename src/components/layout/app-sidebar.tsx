@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Store,
@@ -146,8 +146,14 @@ const adminNavItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, isAdmin, logout } = useAuthStore();
   const { selectedRestaurant } = useRestaurantStore();
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
 
   const getInitials = (name: string) => {
     return name
@@ -341,7 +347,7 @@ export function AppSidebar() {
                 Настройки
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={logout} className="text-destructive">
+            <DropdownMenuItem onClick={handleLogout} className="text-destructive">
               <LogOut className="mr-2 h-4 w-4" />
               Выйти
             </DropdownMenuItem>
