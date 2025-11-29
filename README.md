@@ -1,36 +1,125 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Savory AI Restaurant Dashboard
 
-## Getting Started
+Административная панель для управления ресторанами на базе Next.js 16. Интерфейс на русском языке.
 
-First, run the development server:
+## Стек технологий
+
+- **Next.js 16** с App Router и React 19
+- **shadcn/ui** — компоненты на базе Radix UI + Tailwind CSS
+- **Zustand** — управление состоянием (авторизация, выбор ресторана)
+- **TanStack Query** — серверное состояние и кеширование
+- **Zod** + **react-hook-form** — валидация форм
+- **Axios** — HTTP-клиент с JWT-интерцепторами
+- **@dnd-kit** — drag-and-drop сортировка
+
+## Требования
+
+- Node.js 20+
+- npm 10+
+- Docker (опционально)
+
+## Установка
+
+```bash
+# Клонирование репозитория
+git clone <repository-url>
+cd restaurant-dashboard
+
+# Установка зависимостей
+npm install
+
+# Настройка переменных окружения
+cp .env.example .env.local
+```
+
+Отредактируйте `.env.local` и укажите URL бэкенда:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:4000
+```
+
+## Запуск
+
+### Локальная разработка
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Приложение будет доступно на http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Production сборка
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm run start
+```
 
-## Learn More
+### Docker (рекомендуется для production)
 
-To learn more about Next.js, take a look at the following resources:
+Запуск одной командой:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+docker compose up --build
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+С указанием URL API:
 
-## Deploy on Vercel
+```bash
+NEXT_PUBLIC_API_URL=http://api.example.com docker compose up --build
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Приложение будет доступно на http://localhost:3000
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Команды
+
+| Команда | Описание |
+|---------|----------|
+| `npm run dev` | Запуск dev-сервера |
+| `npm run build` | Production сборка |
+| `npm run start` | Запуск production сервера |
+| `npm run lint` | Проверка ESLint |
+| `docker compose up --build` | Запуск в Docker |
+
+## Структура проекта
+
+```
+src/
+├── app/
+│   ├── (auth)/              # Публичные страницы (вход, регистрация)
+│   └── dashboard/           # Защищённые маршруты
+├── components/
+│   ├── ui/                  # shadcn/ui компоненты
+│   └── layout/              # Sidebar, Header
+├── lib/
+│   └── api.ts               # API-клиент
+├── store/                   # Zustand stores
+└── types/                   # TypeScript типы
+```
+
+## Основные разделы
+
+- `/dashboard` — Главная с статистикой
+- `/dashboard/restaurants` — Управление ресторанами
+- `/dashboard/menu/categories` — Категории меню (с drag-and-drop)
+- `/dashboard/menu/dishes` — Блюда
+- `/dashboard/tables` — Столики
+- `/dashboard/reservations/list` — Бронирования (список)
+- `/dashboard/reservations/calendar` — Бронирования (календарь)
+- `/dashboard/chats/active` — Активные чаты
+- `/dashboard/questions` — Быстрые вопросы для чат-бота
+- `/dashboard/qr-codes` — Генерация QR-кодов
+- `/dashboard/analytics/*` — Аналитика
+- `/dashboard/team` — Команда
+- `/dashboard/settings/*` — Настройки
+- `/dashboard/admin/*` — Админ-панель
+
+## Документация
+
+- `docs/restaurant_dashboard_spec.md` — техническая спецификация
+- `docs/swagger.yaml` — OpenAPI спецификация API
+- `docs/new_task.md` — спецификация drag-and-drop сортировки
+
+## Лицензия
+
+Proprietary
