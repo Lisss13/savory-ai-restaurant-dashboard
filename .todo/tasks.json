@@ -208,5 +208,93 @@
       }
     },
     "isImported": false
+  },
+  {
+    "id": "TASK_102",
+    "priority": "LOW",
+    "tags": [],
+    "title": "поправить категорию и фильтрации у блюд ресторана ",
+    "description": "",
+    "status": "TODO",
+    "date": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 29
+      },
+      "time": {
+        "hour": 17,
+        "minute": 4,
+        "second": 51,
+        "nano": 936220000
+      }
+    },
+    "isImported": false
+  },
+  {
+    "id": "TASK_110",
+    "priority": "LOW",
+    "tags": [],
+    "title": "разобраться с qr кодами ",
+    "description": "",
+    "status": "TODO",
+    "date": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 29
+      },
+      "time": {
+        "hour": 17,
+        "minute": 5,
+        "second": 37,
+        "nano": 986623000
+      }
+    },
+    "isImported": false
+  },
+  {
+    "id": "TASK_119",
+    "priority": "LOW",
+    "tags": [],
+    "title": "Разобраться с загрузкой файлов ",
+    "description": "",
+    "status": "TODO",
+    "date": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 29
+      },
+      "time": {
+        "hour": 17,
+        "minute": 5,
+        "second": 49,
+        "nano": 87194000
+      }
+    },
+    "isImported": false
+  },
+  {
+    "id": "TASK_129",
+    "priority": "LOW",
+    "tags": [],
+    "title": "исправить подписки в системе ",
+    "description": "",
+    "status": "TODO",
+    "date": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 29
+      },
+      "time": {
+        "hour": 17,
+        "minute": 6,
+        "second": 56,
+        "nano": 165364000
+      }
+    },
+    "isImported": false
   }
 ]
