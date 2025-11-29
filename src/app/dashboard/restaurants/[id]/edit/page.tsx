@@ -23,7 +23,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { restaurantApi, uploadApi } from '@/lib/api';
+import {getImageUrl, restaurantApi, uploadApi} from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 
 const DAYS_OF_WEEK = [
@@ -131,6 +131,7 @@ export default function EditRestaurantPage() {
     mutationFn: (data: RestaurantFormValues) =>
       restaurantApi.update(restaurantId, {
         ...data,
+        organization_id: organization?.id,
         working_hours: data.working_hours
           .filter((h) => !h.is_closed)
           .map((h) => ({
@@ -335,7 +336,7 @@ export default function EditRestaurantPage() {
                             {field.value && (
                               <div className="relative w-full h-48 rounded-lg overflow-hidden bg-muted">
                                 <img
-                                  src={field.value}
+                                  src={getImageUrl(field.value)}
                                   alt="Preview"
                                   className="object-cover w-full h-full"
                                 />

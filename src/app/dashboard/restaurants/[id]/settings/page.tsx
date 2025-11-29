@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { restaurantApi } from '@/lib/api';
+import { useAuthStore } from '@/store/auth';
 
 const settingsSchema = z.object({
   reservation_duration: z.number().min(15).max(480),
@@ -58,6 +59,7 @@ export default function RestaurantSettingsPage() {
   const router = useRouter();
   const params = useParams();
   const queryClient = useQueryClient();
+  const { organization } = useAuthStore();
   const restaurantId = Number(params.id);
 
   const { data: restaurant, isLoading } = useQuery({
@@ -85,6 +87,7 @@ export default function RestaurantSettingsPage() {
   const updateMutation = useMutation({
     mutationFn: (data: SettingsFormValues) =>
       restaurantApi.update(restaurantId, {
+        organization_id: organization?.id,
         reservation_duration: data.reservation_duration,
         min_reservation_time: data.min_reservation_time,
       }),

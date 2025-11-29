@@ -38,7 +38,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { restaurantApi } from '@/lib/api';
+import {getImageUrl, restaurantApi} from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 import { useRestaurantStore } from '@/store/restaurant';
 import type { Restaurant } from '@/types';
@@ -217,7 +217,7 @@ export default function RestaurantsPage() {
                   {restaurant.image_url && (
                     <div className="relative h-32 mb-4 rounded-md overflow-hidden bg-muted">
                       <img
-                        src={restaurant.image_url}
+                        src={getImageUrl(restaurant.image_url)}
                         alt={restaurant.name}
                         className="object-cover w-full h-full"
                       />
