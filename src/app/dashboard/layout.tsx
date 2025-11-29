@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { useAuthStore } from '@/store/auth';
+import { useRestaurantStore } from '@/store/restaurant';
+import { restaurantApi } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardLayout({
@@ -13,7 +15,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { isAuthenticated, checkAuth } = useAuthStore();
+  const { isAuthenticated, checkAuth, organization } = useAuthStore();
+  const { setRestaurants, setSelectedRestaurant, selectedRestaurant } = useRestaurantStore();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -34,6 +37,26 @@ export default function DashboardLayout({
 
     verifyAuth();
   }, [checkAuth, router]);
+
+  useEffect(() => {
+    const loadRestaurants = async () => {
+      if (!organization?.id) return;
+
+      try {
+        const response = await restaurantApi.getByOrganization(organization.id);
+        const restaurants = response.data.restaurants;
+        setRestaurants(restaurants);
+
+        if (!selectedRestaurant && restaurants.length > 0) {
+          setSelectedRestaurant(restaurants[0]);
+        }
+      } catch (error) {
+        console.error('Failed to load restaurants:', error);
+      }
+    };
+
+    loadRestaurants();
+  }, [organization?.id, setRestaurants, setSelectedRestaurant, selectedRestaurant]);
 
   if (isLoading) {
     return (

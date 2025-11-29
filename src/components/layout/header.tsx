@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useTheme } from 'next-themes';
-import { Moon, Sun, Bell, Search } from 'lucide-react';
+import { Moon, Sun, Bell, Search, Store, Check, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -21,13 +21,17 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
+import { useRestaurantStore } from '@/store/restaurant';
 
 interface HeaderProps {
   breadcrumbs?: { title: string; href?: string }[];
 }
 
 export function Header({ breadcrumbs }: HeaderProps) {
-  const { setTheme, theme } = useTheme();
+  const { setTheme } = useTheme();
+  const { restaurants, selectedRestaurant, setSelectedRestaurant } = useRestaurantStore();
+
+  const hasMultipleRestaurants = restaurants.length > 1;
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
@@ -51,6 +55,37 @@ export function Header({ breadcrumbs }: HeaderProps) {
             ))}
           </BreadcrumbList>
         </Breadcrumb>
+      )}
+
+      {hasMultipleRestaurants && (
+        <>
+          <Separator orientation="vertical" className="mx-2 h-4" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Store className="h-4 w-4" />
+                <span className="max-w-[150px] truncate">
+                  {selectedRestaurant?.name || 'Выберите ресторан'}
+                </span>
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              {restaurants.map((restaurant) => (
+                <DropdownMenuItem
+                  key={restaurant.id}
+                  onClick={() => setSelectedRestaurant(restaurant)}
+                  className="flex items-center justify-between"
+                >
+                  <span className="truncate">{restaurant.name}</span>
+                  {selectedRestaurant?.id === restaurant.id && (
+                    <Check className="h-4 w-4 text-primary" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>
       )}
 
       <div className="ml-auto flex items-center gap-2">

@@ -27,7 +27,7 @@
     "tags": [],
     "title": "Испрвить ошибку ступара при выходе из системы ",
     "description": "",
-    "status": "IN_PROGRESS",
+    "status": "DONE",
     "date": {
       "date": {
         "year": 2025,
@@ -39,6 +39,19 @@
         "minute": 12,
         "second": 37,
         "nano": 289098000
+      }
+    },
+    "finishDate": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 29
+      },
+      "time": {
+        "hour": 14,
+        "minute": 59,
+        "second": 35,
+        "nano": 731667000
       }
     },
     "isImported": false
@@ -128,7 +141,7 @@
     "tags": [],
     "title": "Показывать в шапке текуший выбранный ресторан ",
     "description": "",
-    "status": "TODO",
+    "status": "IN_PROGRESS",
     "date": {
       "date": {
         "year": 2025,
