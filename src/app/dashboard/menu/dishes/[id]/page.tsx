@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { dishApi, categoryApi, uploadApi } from '@/lib/api';
+import { dishApi, categoryApi, uploadApi, getImageUrl } from '@/lib/api';
 import { useRestaurantStore } from '@/store/restaurant';
 import { NutritionInput } from '@/components/nutrition';
 import type { MenuCategory, NutritionData } from '@/types';
@@ -378,7 +378,7 @@ export default function EditDishPage() {
                             {field.value && (
                               <div className="relative w-full h-48 rounded-lg overflow-hidden bg-muted">
                                 <img
-                                  src={field.value}
+                                  src={getImageUrl(field.value)}
                                   alt="Preview"
                                   className="object-cover w-full h-full"
                                 />

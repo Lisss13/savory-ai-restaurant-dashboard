@@ -50,7 +50,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { dishApi, categoryApi } from '@/lib/api';
+import { dishApi, categoryApi, getImageUrl } from '@/lib/api';
 import { useRestaurantStore } from '@/store/restaurant';
 import type { Dish, MenuCategory } from '@/types';
 
@@ -220,7 +220,7 @@ export default function DishesPage() {
                       <TableCell>
                         {dish.image ? (
                           <img
-                            src={dish.image}
+                            src={getImageUrl(dish.image)}
                             alt={dish.name}
                             className="w-12 h-12 rounded-md object-cover"
                           />
