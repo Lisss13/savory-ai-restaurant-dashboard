@@ -96,6 +96,8 @@ export interface CreateRestaurantRequest {
   description?: string;
   image_url?: string;
   working_hours: WorkingHour[];
+  reservation_duration?: number;
+  min_reservation_time?: number;
 }
 
 // Table types
@@ -170,20 +172,25 @@ export interface CreateDishRequest {
 // Reservation types
 export interface Reservation {
   id: number;
-  restaurant_id: number;
-  restaurant_name: string;
-  table_id: number;
-  table_name: string;
-  customer_name: string;
-  customer_phone: string;
-  customer_email?: string;
+  restaurant_id?: number;
+  restaurant_name?: string;
+  table_id?: number;
+  table_name?: string;
+  table?: {
+    id: number;
+    name: string;
+    capacity?: number;
+  };
+  guest_name: string;
+  guest_phone: string;
+  guest_email?: string;
   guest_count: number;
-  reservation_date: string;
-  start_time: string;
-  end_time: string;
+  date: string;
+  time: string;
+  end_time?: string;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
-  notes?: string;
-  created_at: string;
+  comment?: string;
+  created_at?: string;
 }
 
 export interface CreateReservationRequest {
@@ -210,7 +217,10 @@ export interface AvailableSlot {
 export interface ChatSession {
   id: number;
   active: boolean;
+  status: 'active' | 'closed';
   lastActive: string;
+  createdAt: string;
+  closedAt?: string;
   table?: {
     id: number;
     name: string;
@@ -220,6 +230,7 @@ export interface ChatSession {
     name: string;
   };
   messages?: ChatMessage[];
+  messageCount?: number;
   unreadCount?: number;
 }
 

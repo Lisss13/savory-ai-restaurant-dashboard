@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { useTheme } from 'next-themes';
 import { Moon, Sun, Bell, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -37,16 +38,16 @@ export function Header({ breadcrumbs }: HeaderProps) {
         <Breadcrumb>
           <BreadcrumbList>
             {breadcrumbs.map((crumb, index) => (
-              <BreadcrumbItem key={index}>
-                {index < breadcrumbs.length - 1 ? (
-                  <>
+              <React.Fragment key={index}>
+                <BreadcrumbItem>
+                  {index < breadcrumbs.length - 1 ? (
                     <BreadcrumbLink href={crumb.href}>{crumb.title}</BreadcrumbLink>
-                    <BreadcrumbSeparator />
-                  </>
-                ) : (
-                  <BreadcrumbPage>{crumb.title}</BreadcrumbPage>
-                )}
-              </BreadcrumbItem>
+                  ) : (
+                    <BreadcrumbPage>{crumb.title}</BreadcrumbPage>
+                  )}
+                </BreadcrumbItem>
+                {index < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
+              </React.Fragment>
             ))}
           </BreadcrumbList>
         </Breadcrumb>

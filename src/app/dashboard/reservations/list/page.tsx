@@ -195,12 +195,15 @@ export default function ReservationsListPage() {
   };
 
   const filteredReservations = reservations?.filter((r: Reservation) => {
+    const guestName = r.guest_name || '';
+    const guestPhone = r.guest_phone || '';
     const matchesSearch =
-      r.customer_name.toLowerCase().includes(search.toLowerCase()) ||
-      r.customer_phone.includes(search);
+      !search ||
+      guestName.toLowerCase().includes(search.toLowerCase()) ||
+      guestPhone.includes(search);
     const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
     const matchesDate =
-      !dateFilter || r.reservation_date === format(dateFilter, 'yyyy-MM-dd');
+      !dateFilter || r.date === format(dateFilter, 'yyyy-MM-dd');
     return matchesSearch && matchesStatus && matchesDate;
   });
 
@@ -330,30 +333,32 @@ export default function ReservationsListPage() {
                   {filteredReservations?.map((reservation: Reservation) => (
                     <TableRow key={reservation.id}>
                       <TableCell>
-                        {format(new Date(reservation.reservation_date), 'dd.MM.yyyy')}
+                        {reservation.date ? format(new Date(reservation.date), 'dd.MM.yyyy') : '—'}
                       </TableCell>
                       <TableCell>
-                        {reservation.start_time} - {reservation.end_time}
+                        {reservation.time || '—'} - {reservation.end_time || '—'}
                       </TableCell>
                       <TableCell className="font-medium">
-                        {reservation.customer_name}
+                        {reservation.guest_name || '—'}
                       </TableCell>
                       <TableCell>
-                        <a
-                          href={`tel:${reservation.customer_phone}`}
-                          className="flex items-center gap-1 hover:text-primary"
-                        >
-                          <Phone className="h-3 w-3" />
-                          {reservation.customer_phone}
-                        </a>
+                        {reservation.guest_phone ? (
+                          <a
+                            href={`tel:${reservation.guest_phone}`}
+                            className="flex items-center gap-1 hover:text-primary"
+                          >
+                            <Phone className="h-3 w-3" />
+                            {reservation.guest_phone}
+                          </a>
+                        ) : '—'}
                       </TableCell>
                       <TableCell className="text-center">
-                        {reservation.guest_count}
+                        {reservation.guest_count || 0}
                       </TableCell>
-                      <TableCell>{reservation.table_name}</TableCell>
+                      <TableCell>{reservation.table_name || reservation.table?.name || '—'}</TableCell>
                       <TableCell>
-                        <Badge variant={STATUS_MAP[reservation.status].variant}>
-                          {STATUS_MAP[reservation.status].label}
+                        <Badge variant={STATUS_MAP[reservation.status]?.variant || 'secondary'}>
+                          {STATUS_MAP[reservation.status]?.label || reservation.status}
                         </Badge>
                       </TableCell>
                       <TableCell>

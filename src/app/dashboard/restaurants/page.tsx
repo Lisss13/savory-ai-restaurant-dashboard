@@ -14,6 +14,8 @@ import {
   Trash2,
   QrCode,
   Check,
+  Eye,
+  Settings,
 } from 'lucide-react';
 import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -174,9 +176,21 @@ export default function RestaurantsPage() {
                         Выбрать
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
+                        <Link href={`/dashboard/restaurants/${restaurant.id}`}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          Просмотр
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
                         <Link href={`/dashboard/restaurants/${restaurant.id}/edit`}>
                           <Pencil className="mr-2 h-4 w-4" />
                           Редактировать
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/dashboard/restaurants/${restaurant.id}/settings`}>
+                          <Settings className="mr-2 h-4 w-4" />
+                          Настройки
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>

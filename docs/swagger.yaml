@@ -1,0 +1,4385 @@
+openapi: 3.0.3
+info:
+  title: Savory AI Server API
+  description: |
+    REST API сервер для системы управления ресторанами Savory AI.
+
+    ## Основные возможности:
+    - Управление пользователями и организациями
+    - Управление ресторанами и столами
+    - Меню и блюда с категориями
+    - Бронирование столиков (публичное API для AI-бота и защищённое для персонала)
+    - Система подписок
+    - AI-чат с поддержкой бронирования через Anthropic Claude
+    - Генерация QR-кодов
+    - Административная панель
+
+    ## Аутентификация
+    Для доступа к защищённым эндпоинтам используется JWT Bearer токен.
+    Получите токен через `/auth/login` и передавайте его в заголовке `Authorization: Bearer <token>`.
+  version: 1.0.0
+  contact:
+    name: Savory AI Team
+
+servers:
+  - url: http://localhost:4000
+    description: Development server
+  - url: https://api.savory-ai.com
+    description: Production server
+
+tags:
+  - name: Health
+    description: Проверка состояния сервера
+  - name: Auth
+    description: Аутентификация и авторизация пользователей
+  - name: User
+    description: Управление профилями пользователей
+  - name: Organization
+    description: Управление организациями (компаниями)
+  - name: Language
+    description: Управление языками для мультиязычного контента
+  - name: Restaurant
+    description: Управление ресторанами внутри организации
+  - name: Table
+    description: Управление столами в ресторанах
+  - name: Menu Category
+    description: Управление категориями меню (напитки, основные блюда и т.д.)
+  - name: Dish
+    description: Управление блюдами и их ингредиентами
+  - name: Question
+    description: Управление вопросами для чат-бота (мультиязычные)
+  - name: QR Code
+    description: Генерация QR-кодов для ресторанов и столов
+  - name: File Upload
+    description: Загрузка изображений и файлов
+  - name: Chat
+    description: Чат-система между гостями за столом и рестораном
+  - name: Reservation
+    description: Бронирование столиков (публичное и защищённое API)
+  - name: Subscription
+    description: Управление подписками организаций
+  - name: Admin
+    description: Административная панель (требует роль admin)
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT токен авторизации. Получите через POST /auth/login
+
+  schemas:
+    # ==================== Common ====================
+    Response:
+      type: object
+      description: Стандартная обёртка для всех ответов API
+      properties:
+        code:
+          type: integer
+          description: HTTP код ответа
+          example: 200
+        messages:
+          type: array
+          description: Массив сообщений (успех/ошибки)
+          items:
+            type: string
+          example: ["success"]
+        data:
+          type: object
+          description: Данные ответа
+        meta:
+          type: object
+          description: Метаданные (пагинация и т.д.)
+
+    ErrorResponse:
+      type: object
+      description: Ответ при ошибке
+      properties:
+        code:
+          type: integer
+          example: 400
+        messages:
+          type: array
+          items:
+            type: string
+          example: ["validation error"]
+
+    # ==================== Auth ====================
+    LoginRequest:
+      type: object
+      description: Запрос на вход в систему
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email пользователя
+          example: john.doe@gmail.com
+        password:
+          type: string
+          minLength: 8
+          maxLength: 255
+          description: Пароль (минимум 8 символов)
+          example: "12345678"
+
+    RegisterRequest:
+      type: object
+      description: Запрос на регистрацию нового пользователя и организации
+      required:
+        - email
+        - password
+      properties:
+        company:
+          type: string
+          description: Название компании/организации
+          example: Attic
+        name:
+          type: string
+          description: Имя пользователя
+          example: John Doe
+        email:
+          type: string
+          format: email
+          description: Email пользователя (будет использоваться для входа)
+          example: john.doe@gmail.com
+        phone:
+          type: string
+          description: Номер телефона
+          example: "+1234567890"
+        password:
+          type: string
+          minLength: 8
+          maxLength: 255
+          description: Пароль (минимум 8 символов)
+          example: "12345678"
+
+    ChangePasswordRequest:
+      type: object
+      description: Запрос на смену пароля
+      required:
+        - oldPassword
+        - newPassword
+      properties:
+        oldPassword:
+          type: string
+          minLength: 8
+          maxLength: 255
+          description: Текущий пароль
+        newPassword:
+          type: string
+          minLength: 8
+          maxLength: 255
+          description: Новый пароль
+
+    RequestPasswordResetRequest:
+      type: object
+      description: Запрос на отправку кода сброса пароля
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email для отправки кода сброса
+          example: john.doe@gmail.com
+
+    VerifyPasswordResetRequest:
+      type: object
+      description: Запрос на подтверждение кода и установку нового пароля
+      required:
+        - email
+        - code
+        - newPassword
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email пользователя
+        code:
+          type: string
+          description: Код подтверждения из письма
+          example: "123456"
+        newPassword:
+          type: string
+          minLength: 8
+          maxLength: 255
+          description: Новый пароль
+
+    LoginResponse:
+      type: object
+      description: Ответ при успешной аутентификации
+      properties:
+        token:
+          type: string
+          description: JWT токен для авторизации запросов
+        type:
+          type: string
+          description: Тип токена
+          example: Bearer
+        expires_at:
+          type: integer
+          format: int64
+          description: Unix timestamp истечения токена
+        user:
+          $ref: '#/components/schemas/UserResponse'
+        organization:
+          $ref: '#/components/schemas/UserOrganizationResponse'
+
+    UserOrganizationResponse:
+      type: object
+      description: Краткая информация об организации пользователя
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        company:
+          type: string
+        phone:
+          type: string
+        admin_id:
+          type: integer
+          description: ID администратора организации
+
+    # ==================== User ====================
+    UserResponse:
+      type: object
+      description: Информация о пользователе
+      properties:
+        id:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        email:
+          type: string
+        name:
+          type: string
+        company:
+          type: string
+        phone:
+          type: string
+
+    UserCreateRequest:
+      type: object
+      description: Запрос на создание нового пользователя в организации
+      required:
+        - name
+        - company
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          description: Имя пользователя
+        company:
+          type: string
+          description: Название компании
+        email:
+          type: string
+          format: email
+          description: Email пользователя
+        phone:
+          type: string
+          description: Номер телефона
+        password:
+          type: string
+          minLength: 6
+          description: Пароль (минимум 6 символов)
+
+    UserUpdateRequest:
+      type: object
+      description: Запрос на обновление профиля пользователя
+      properties:
+        name:
+          type: string
+        company:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+
+    # ==================== Organization ====================
+    OrganizationResponse:
+      type: object
+      description: Полная информация об организации
+      properties:
+        id:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        name:
+          type: string
+          description: Название организации
+        phone:
+          type: string
+          description: Контактный телефон
+        admin:
+          $ref: '#/components/schemas/UserInOrgResponse'
+        users:
+          type: array
+          description: Список пользователей организации
+          items:
+            $ref: '#/components/schemas/UserInOrgResponse'
+        languages:
+          type: array
+          description: Поддерживаемые языки организации
+          items:
+            $ref: '#/components/schemas/LanguageResponse'
+
+    UserInOrgResponse:
+      type: object
+      description: Пользователь в контексте организации
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+
+    UpdateOrganizationRequest:
+      type: object
+      description: Запрос на обновление данных организации
+      properties:
+        name:
+          type: string
+          description: Новое название
+        phone:
+          type: string
+          description: Новый телефон
+
+    AddUserToOrgRequest:
+      type: object
+      description: Запрос на добавление пользователя в организацию
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: integer
+          description: ID пользователя для добавления
+
+    RemoveUserFromOrgRequest:
+      type: object
+      description: Запрос на удаление пользователя из организации
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: integer
+          description: ID пользователя для удаления
+
+    # ==================== Language ====================
+    LanguageResponse:
+      type: object
+      description: Информация о языке
+      properties:
+        id:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        code:
+          type: string
+          description: ISO код языка
+          example: en
+        name:
+          type: string
+          description: Название языка
+          example: English
+        description:
+          type: string
+          description: Описание
+
+    CreateLanguageRequest:
+      type: object
+      description: Запрос на создание нового языка
+      required:
+        - code
+        - name
+      properties:
+        code:
+          type: string
+          description: ISO код языка (например, en, ru, de)
+          example: en
+        name:
+          type: string
+          description: Название языка
+          example: English
+        description:
+          type: string
+          description: Дополнительное описание
+
+    UpdateLanguageRequest:
+      type: object
+      description: Запрос на обновление языка
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+
+    AddLanguageToOrgRequest:
+      type: object
+      description: Запрос на добавление языка в организацию
+      required:
+        - languageId
+      properties:
+        languageId:
+          type: integer
+          description: ID языка для добавления
+
+    RemoveLanguageFromOrgRequest:
+      type: object
+      description: Запрос на удаление языка из организации
+      required:
+        - languageId
+      properties:
+        languageId:
+          type: integer
+          description: ID языка для удаления
+
+    # ==================== Restaurant ====================
+    RestaurantResponse:
+      type: object
+      description: Информация о ресторане
+      properties:
+        id:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        organization:
+          type: object
+          description: Организация, которой принадлежит ресторан
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            phone:
+              type: string
+        name:
+          type: string
+          description: Название ресторана
+        address:
+          type: string
+          description: Адрес
+        phone:
+          type: string
+          description: Телефон ресторана
+        website:
+          type: string
+          description: Веб-сайт
+        description:
+          type: string
+          description: Описание
+        image_url:
+          type: string
+          description: URL изображения
+        working_hours:
+          type: array
+          description: Часы работы по дням недели
+          items:
+            $ref: '#/components/schemas/WorkingHourResponse'
+
+    WorkingHourResponse:
+      type: object
+      description: Часы работы для одного дня
+      properties:
+        id:
+          type: integer
+        day_of_week:
+          type: integer
+          minimum: 0
+          maximum: 6
+          description: День недели (0 = Воскресенье, 6 = Суббота)
+        open_time:
+          type: string
+          description: Время открытия
+          example: "09:00"
+        close_time:
+          type: string
+          description: Время закрытия
+          example: "22:00"
+
+    CreateRestaurantRequest:
+      type: object
+      description: Запрос на создание ресторана
+      required:
+        - organization_id
+        - name
+        - address
+        - phone
+        - working_hours
+      properties:
+        organization_id:
+          type: integer
+          description: ID организации-владельца
+        name:
+          type: string
+          description: Название ресторана
+        address:
+          type: string
+          description: Полный адрес
+        phone:
+          type: string
+          description: Контактный телефон
+        website:
+          type: string
+          description: Веб-сайт
+        description:
+          type: string
+          description: Описание ресторана
+        image_url:
+          type: string
+          description: URL изображения
+        working_hours:
+          type: array
+          description: Расписание работы
+          items:
+            $ref: '#/components/schemas/WorkingHourRequest'
+
+    WorkingHourRequest:
+      type: object
+      description: Часы работы для создания/обновления
+      required:
+        - day_of_week
+        - open_time
+        - close_time
+      properties:
+        day_of_week:
+          type: integer
+          minimum: 0
+          maximum: 6
+          description: День недели (0-6)
+        open_time:
+          type: string
+          description: Время открытия (HH:MM)
+        close_time:
+          type: string
+          description: Время закрытия (HH:MM)
+
+    UpdateRestaurantRequest:
+      type: object
+      description: Запрос на обновление ресторана
+      required:
+        - organization_id
+        - name
+        - address
+        - phone
+      properties:
+        organization_id:
+          type: integer
+        name:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        website:
+          type: string
+        description:
+          type: string
+        image_url:
+          type: string
+
+    # ==================== Table ====================
+    TableResponse:
+      type: object
+      description: Информация о столе в ресторане
+      properties:
+        id:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        restaurant:
+          type: object
+          description: Ресторан, которому принадлежит стол
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+        name:
+          type: string
+          description: Название/номер стола
+        guestCount:
+          type: integer
+          description: Вместимость стола
+
+    CreateTableRequest:
+      type: object
+      description: Запрос на создание стола
+      required:
+        - name
+        - guestCount
+        - restaurantId
+      properties:
+        name:
+          type: string
+          description: Название/номер стола
+        guestCount:
+          type: integer
+          minimum: 1
+          description: Максимальное количество гостей
+        restaurantId:
+          type: integer
+          description: ID ресторана
+
+    UpdateTableRequest:
+      type: object
+      description: Запрос на обновление стола
+      required:
+        - name
+        - guestCount
+        - restaurantId
+      properties:
+        name:
+          type: string
+        guestCount:
+          type: integer
+          minimum: 1
+        restaurantId:
+          type: integer
+
+    # ==================== Menu Category ====================
+    MenuCategoryResponse:
+      type: object
+      description: Категория меню (напитки, горячее и т.д.)
+      properties:
+        id:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        name:
+          type: string
+          description: Название категории
+
+    CreateMenuCategoryRequest:
+      type: object
+      description: Запрос на создание категории меню
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Название категории
+
+    # ==================== Dish ====================
+    DishResponse:
+      type: object
+      description: Информация о блюде
+      properties:
+        id:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        organization:
+          type: object
+          description: Организация-владелец
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            phone:
+              type: string
+        menuCategory:
+          type: object
+          description: Категория меню
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+        name:
+          type: string
+          description: Название блюда
+        price:
+          type: number
+          format: float
+          description: Цена
+        description:
+          type: string
+          description: Описание блюда
+        image:
+          type: string
+          description: URL изображения
+        ingredients:
+          type: array
+          description: Список ингредиентов
+          items:
+            $ref: '#/components/schemas/IngredientResponse'
+
+    IngredientResponse:
+      type: object
+      description: Ингредиент блюда
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          description: Название ингредиента
+        quantity:
+          type: number
+          format: float
+          description: Количество
+
+    CreateDishRequest:
+      type: object
+      description: Запрос на создание блюда
+      required:
+        - menuCategoryId
+        - name
+        - price
+        - ingredients
+      properties:
+        menuCategoryId:
+          type: integer
+          description: ID категории меню
+        name:
+          type: string
+          description: Название блюда
+        price:
+          type: number
+          format: float
+          description: Цена
+        description:
+          type: string
+          description: Описание
+        image:
+          type: string
+          description: URL изображения
+        ingredients:
+          type: array
+          description: Ингредиенты
+          items:
+            $ref: '#/components/schemas/IngredientRequest'
+
+    IngredientRequest:
+      type: object
+      description: Ингредиент для создания/обновления
+      required:
+        - name
+        - quantity
+      properties:
+        name:
+          type: string
+          description: Название ингредиента
+        quantity:
+          type: number
+          format: float
+          description: Количество
+
+    UpdateDishRequest:
+      type: object
+      description: Запрос на обновление блюда
+      required:
+        - menuCategoryId
+        - name
+        - price
+        - ingredients
+      properties:
+        menuCategoryId:
+          type: integer
+        name:
+          type: string
+        price:
+          type: number
+          format: float
+        description:
+          type: string
+        image:
+          type: string
+        ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/IngredientRequest'
+
+    DishByCategoryResponse:
+      type: object
+      description: Блюда, сгруппированные по категориям
+      properties:
+        dishes:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+              dishes:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DishResponse'
+
+    # ==================== Question ====================
+    QuestionResponse:
+      type: object
+      description: Вопрос для чат-бота
+      properties:
+        id:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        text:
+          type: string
+          description: Текст вопроса
+        language:
+          $ref: '#/components/schemas/LanguageResponse'
+        chat_type:
+          type: string
+          enum: [reservation, menu]
+          description: |
+            Тип чата, для которого предназначен вопрос:
+            - `reservation` — вопросы для чата бронирования столиков
+            - `menu` — вопросы для чата с информацией о меню
+          example: menu
+
+    CreateQuestionRequest:
+      type: object
+      description: Запрос на создание вопроса
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: Текст вопроса
+        languageCode:
+          type: string
+          description: Код языка (если не указан, вопрос будет универсальным)
+          example: en
+        chatType:
+          type: string
+          enum: [reservation, menu]
+          description: |
+            Тип чата для вопроса:
+            - `reservation` — для чата бронирования
+            - `menu` — для чата с информацией о меню (по умолчанию)
+          default: menu
+          example: menu
+
+    UpdateQuestionRequest:
+      type: object
+      description: Запрос на обновление вопроса
+      properties:
+        text:
+          type: string
+          description: Новый текст вопроса
+        languageCode:
+          type: string
+          description: Код языка (пустая строка удаляет привязку к языку)
+        chatType:
+          type: string
+          enum: [reservation, menu]
+          description: Новый тип чата для вопроса
+
+    # ==================== Chat ====================
+    StartTableSessionRequest:
+      type: object
+      description: Запрос на начало чат-сессии от стола
+      required:
+        - tableId
+        - restaurantId
+      properties:
+        tableId:
+          type: integer
+          description: ID стола
+        restaurantId:
+          type: integer
+          description: ID ресторана
+
+    SendTableMessageRequest:
+      type: object
+      description: Запрос на отправку сообщения от стола
+      required:
+        - sessionId
+        - content
+      properties:
+        sessionId:
+          type: integer
+          description: ID сессии чата
+        content:
+          type: string
+          description: Текст сообщения
+
+    StartRestaurantSessionRequest:
+      type: object
+      description: Запрос на начало чат-сессии от ресторана
+      required:
+        - restaurantId
+      properties:
+        restaurantId:
+          type: integer
+          description: ID ресторана
+
+    SendRestaurantMessageRequest:
+      type: object
+      description: Запрос на отправку сообщения от ресторана
+      required:
+        - sessionId
+        - content
+      properties:
+        sessionId:
+          type: integer
+          description: ID сессии чата
+        content:
+          type: string
+          description: Текст сообщения
+
+    ChatMessageResponse:
+      type: object
+      description: Сообщение в чате
+      properties:
+        id:
+          type: integer
+        content:
+          type: string
+          description: Текст сообщения
+        sentAt:
+          type: string
+          format: date-time
+          description: Время отправки
+        authorType:
+          type: string
+          enum: [user, bot, restaurant]
+          description: Тип автора сообщения
+
+    ChatSessionResponse:
+      type: object
+      description: Чат-сессия
+      properties:
+        id:
+          type: integer
+        active:
+          type: boolean
+          description: Активна ли сессия
+        lastActive:
+          type: string
+          format: date-time
+          description: Время последней активности
+        table:
+          type: object
+          description: Стол, с которого ведётся чат
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+        messages:
+          type: array
+          description: Сообщения в сессии
+          items:
+            $ref: '#/components/schemas/ChatMessageResponse'
+
+    # ==================== Subscription ====================
+    SubscriptionResponse:
+      type: object
+      description: Информация о подписке организации
+      properties:
+        id:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        organization:
+          type: object
+          description: Организация-владелец подписки
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            phone:
+              type: string
+        period:
+          type: integer
+          description: Период подписки в месяцах
+        startDate:
+          type: string
+          format: date-time
+          description: Дата начала подписки
+        endDate:
+          type: string
+          format: date-time
+          description: Дата окончания подписки
+        isActive:
+          type: boolean
+          description: Активна ли подписка
+        daysLeft:
+          type: integer
+          description: Оставшихся дней до окончания
+
+    CreateSubscriptionRequest:
+      type: object
+      description: Запрос на создание подписки
+      required:
+        - organizationId
+        - period
+        - startDate
+      properties:
+        organizationId:
+          type: integer
+          description: ID организации
+        period:
+          type: integer
+          minimum: 1
+          description: Период в месяцах
+        startDate:
+          type: string
+          format: date-time
+          description: Дата начала подписки
+
+    UpdateSubscriptionRequest:
+      type: object
+      description: Запрос на обновление подписки
+      required:
+        - period
+        - startDate
+      properties:
+        period:
+          type: integer
+          minimum: 1
+          description: Новый период в месяцах
+        startDate:
+          type: string
+          format: date-time
+          description: Новая дата начала
+        isActive:
+          type: boolean
+          description: Статус активности
+
+    ExtendSubscriptionRequest:
+      type: object
+      description: Запрос на продление подписки
+      required:
+        - period
+      properties:
+        period:
+          type: integer
+          minimum: 1
+          description: Количество дополнительных месяцев
+
+    # ==================== Reservation ====================
+    ReservationResponse:
+      type: object
+      description: Информация о бронировании
+      properties:
+        id:
+          type: integer
+          description: ID бронирования
+        restaurant_id:
+          type: integer
+          description: ID ресторана
+        restaurant_name:
+          type: string
+          description: Название ресторана
+        table_id:
+          type: integer
+          description: ID столика
+        table_name:
+          type: string
+          description: Название столика
+        customer_name:
+          type: string
+          description: Имя клиента
+        customer_phone:
+          type: string
+          description: Телефон клиента
+        customer_email:
+          type: string
+          description: Email клиента
+        guest_count:
+          type: integer
+          description: Количество гостей
+        reservation_date:
+          type: string
+          format: date
+          description: Дата бронирования
+        start_time:
+          type: string
+          description: Время начала (HH:MM)
+        end_time:
+          type: string
+          description: Время окончания (HH:MM)
+        status:
+          type: string
+          enum: [pending, confirmed, cancelled, completed]
+          description: Статус бронирования
+        notes:
+          type: string
+          description: Примечания к бронированию
+        created_at:
+          type: string
+          format: date-time
+          description: Дата создания
+
+    ReservationListResponse:
+      type: object
+      description: Список бронирований
+      properties:
+        reservations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReservationResponse'
+
+    AvailableSlotResponse:
+      type: object
+      description: Доступный слот для бронирования
+      properties:
+        table_id:
+          type: integer
+          description: ID столика
+        table_name:
+          type: string
+          description: Название столика
+        capacity:
+          type: integer
+          description: Вместимость столика
+        start_time:
+          type: string
+          description: Время начала слота (HH:MM)
+        end_time:
+          type: string
+          description: Время окончания слота (HH:MM)
+
+    AvailableSlotsResponse:
+      type: object
+      description: Список доступных слотов
+      properties:
+        restaurant_id:
+          type: integer
+        restaurant_name:
+          type: string
+        date:
+          type: string
+          format: date
+        slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailableSlotResponse'
+
+    CreateReservationRequest:
+      type: object
+      description: Запрос на создание бронирования
+      required:
+        - restaurant_id
+        - table_id
+        - customer_name
+        - customer_phone
+        - guest_count
+        - reservation_date
+        - start_time
+      properties:
+        restaurant_id:
+          type: integer
+          description: ID ресторана
+        table_id:
+          type: integer
+          description: ID столика
+        customer_name:
+          type: string
+          description: Имя клиента
+        customer_phone:
+          type: string
+          description: Телефон клиента
+        customer_email:
+          type: string
+          description: Email клиента (опционально)
+        guest_count:
+          type: integer
+          minimum: 1
+          description: Количество гостей
+        reservation_date:
+          type: string
+          format: date
+          description: Дата бронирования (YYYY-MM-DD)
+        start_time:
+          type: string
+          description: Время начала (HH:MM)
+        notes:
+          type: string
+          description: Примечания
+
+    UpdateReservationRequest:
+      type: object
+      description: Запрос на обновление бронирования
+      properties:
+        customer_name:
+          type: string
+        customer_phone:
+          type: string
+        customer_email:
+          type: string
+        guest_count:
+          type: integer
+          minimum: 1
+        reservation_date:
+          type: string
+          format: date
+        start_time:
+          type: string
+        notes:
+          type: string
+        status:
+          type: string
+          enum: [pending, confirmed, cancelled, completed]
+
+    CancelReservationByPhoneRequest:
+      type: object
+      description: Запрос на отмену бронирования по телефону
+      required:
+        - phone
+      properties:
+        phone:
+          type: string
+          description: Телефон клиента для верификации
+
+    CustomerReservationsResponse:
+      type: object
+      description: Бронирования клиента
+      properties:
+        reservations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReservationResponse'
+
+    # ==================== Admin ====================
+    AdminStatsResponse:
+      type: object
+      description: Статистика системы для администратора
+      properties:
+        totalUsers:
+          type: integer
+          format: int64
+          description: Общее количество пользователей
+        activeUsers:
+          type: integer
+          format: int64
+          description: Активных пользователей
+        totalOrganizations:
+          type: integer
+          format: int64
+          description: Общее количество организаций
+        totalRestaurants:
+          type: integer
+          format: int64
+          description: Общее количество ресторанов
+        totalDishes:
+          type: integer
+          format: int64
+          description: Общее количество блюд
+        totalTables:
+          type: integer
+          format: int64
+          description: Общее количество столов
+        totalQuestions:
+          type: integer
+          format: int64
+          description: Общее количество вопросов
+        activeSubscriptions:
+          type: integer
+          format: int64
+          description: Активных подписок
+        recentActivity:
+          type: array
+          description: Недавняя активность
+          items:
+            $ref: '#/components/schemas/AdminActivityResponse'
+
+    AdminActivityResponse:
+      type: object
+      description: Запись об активности в системе
+      properties:
+        id:
+          type: integer
+        action:
+          type: string
+          description: Тип действия
+        entityType:
+          type: string
+          description: Тип сущности
+        entityId:
+          type: integer
+          description: ID сущности
+        adminName:
+          type: string
+          description: Имя администратора
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminUserResponse:
+      type: object
+      description: Пользователь для админ-панели
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        company:
+          type: string
+        role:
+          type: string
+          description: Роль пользователя (user/admin)
+        isActive:
+          type: boolean
+          description: Активен ли аккаунт
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminUsersListResponse:
+      type: object
+      description: Список пользователей с пагинацией
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminUserResponse'
+        totalCount:
+          type: integer
+          format: int64
+          description: Общее количество записей
+        page:
+          type: integer
+          description: Текущая страница
+        pageSize:
+          type: integer
+          description: Размер страницы
+
+    AdminOrganizationResponse:
+      type: object
+      description: Организация для админ-панели
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+        adminId:
+          type: integer
+          description: ID администратора организации
+        adminName:
+          type: string
+        adminEmail:
+          type: string
+        restaurantsCount:
+          type: integer
+          format: int64
+          description: Количество ресторанов
+        usersCount:
+          type: integer
+          format: int64
+          description: Количество пользователей
+        hasActiveSubscription:
+          type: boolean
+          description: Есть ли активная подписка
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminOrganizationsListResponse:
+      type: object
+      description: Список организаций с пагинацией
+      properties:
+        organizations:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminOrganizationResponse'
+        totalCount:
+          type: integer
+          format: int64
+        page:
+          type: integer
+        pageSize:
+          type: integer
+
+    AdminDishResponse:
+      type: object
+      description: Блюдо для модерации
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          format: float
+        image:
+          type: string
+        organizationId:
+          type: integer
+        organizationName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminDishesListResponse:
+      type: object
+      description: Список блюд для модерации
+      properties:
+        dishes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminDishResponse'
+        totalCount:
+          type: integer
+          format: int64
+        page:
+          type: integer
+        pageSize:
+          type: integer
+
+    AdminLogResponse:
+      type: object
+      description: Лог действия администратора
+      properties:
+        id:
+          type: integer
+        adminId:
+          type: integer
+        adminName:
+          type: string
+        adminEmail:
+          type: string
+        action:
+          type: string
+          description: Выполненное действие
+        entityType:
+          type: string
+          description: Тип сущности
+        entityId:
+          type: integer
+          description: ID сущности
+        details:
+          type: string
+          description: Детали действия
+        ipAddress:
+          type: string
+          description: IP адрес
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminLogsListResponse:
+      type: object
+      description: Список логов с пагинацией
+      properties:
+        logs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminLogResponse'
+        totalCount:
+          type: integer
+          format: int64
+        page:
+          type: integer
+        pageSize:
+          type: integer
+
+    UpdateUserStatusRequest:
+      type: object
+      description: Запрос на изменение статуса пользователя
+      properties:
+        isActive:
+          type: boolean
+          description: Новый статус активности
+
+    UpdateUserRoleRequest:
+      type: object
+      description: Запрос на изменение роли пользователя
+      required:
+        - role
+      properties:
+        role:
+          type: string
+          enum: [user, admin]
+          description: Новая роль
+
+paths:
+  # ==================== Health ====================
+  /ping:
+    get:
+      tags:
+        - Health
+      summary: Проверка работоспособности сервера
+      description: Возвращает "Pong!" если сервер работает корректно. Используется для health check в Kubernetes/Docker.
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Сервер работает
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Pong! 👋"
+
+  /auth/chek:
+    get:
+      tags:
+        - Auth
+      summary: Проверка валидности JWT токена
+      description: |
+        Проверяет валидность переданного JWT токена и возвращает информацию о текущем пользователе.
+        Используется для проверки авторизации на клиенте.
+      operationId: verifyToken
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Токен валиден
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        description: ID пользователя
+                      email:
+                        type: string
+                        description: Email пользователя
+                      company_id:
+                        type: integer
+                        description: ID организации
+        '401':
+          description: Невалидный или истёкший токен
+
+  # ==================== Auth ====================
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Вход в систему
+      description: |
+        Аутентифицирует пользователя по email и паролю.
+        При успехе возвращает JWT токен, информацию о пользователе и его организации.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Успешный вход
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Неверные учётные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Регистрация нового пользователя
+      description: |
+        Создаёт нового пользователя и организацию.
+        Пользователь автоматически становится администратором созданной организации.
+        После регистрации возвращается JWT токен для немедленного использования.
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Регистрация успешна
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Ошибка валидации или email уже занят
+
+  /auth/change-password:
+    post:
+      tags:
+        - Auth
+      summary: Смена пароля
+      description: Позволяет авторизованному пользователю изменить свой пароль, указав текущий и новый пароли.
+      operationId: changePassword
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Пароль успешно изменён
+        '400':
+          description: Неверный текущий пароль или ошибка валидации
+        '401':
+          description: Не авторизован
+
+  /auth/request-password-reset:
+    post:
+      tags:
+        - Auth
+      summary: Запрос сброса пароля
+      description: |
+        Отправляет код сброса пароля на указанный email.
+        Код действителен в течение ограниченного времени.
+      operationId: requestPasswordReset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPasswordResetRequest'
+      responses:
+        '200':
+          description: Код отправлен (если email существует)
+        '400':
+          description: Ошибка валидации
+
+  /auth/verify-password-reset:
+    post:
+      tags:
+        - Auth
+      summary: Подтверждение сброса пароля
+      description: Проверяет код сброса и устанавливает новый пароль.
+      operationId: verifyPasswordReset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyPasswordResetRequest'
+      responses:
+        '200':
+          description: Пароль успешно сброшен
+        '400':
+          description: Неверный код или истёк срок действия
+
+  # ==================== User ====================
+  /user/{id}:
+    get:
+      tags:
+        - User
+      summary: Получить пользователя по ID
+      description: Возвращает информацию о пользователе по его ID. Доступно только для авторизованных пользователей.
+      operationId: getUserById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID пользователя
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Пользователь найден
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: Пользователь не найден
+    patch:
+      tags:
+        - User
+      summary: Обновить данные пользователя
+      description: Обновляет профиль пользователя. Можно обновить частично, указав только нужные поля.
+      operationId: updateUser
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID пользователя
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      responses:
+        '200':
+          description: Пользователь обновлён
+        '400':
+          description: Ошибка валидации
+        '404':
+          description: Пользователь не найден
+
+  /user:
+    post:
+      tags:
+        - User
+      summary: Создать пользователя
+      description: Создаёт нового пользователя в системе. Обычно используется администратором организации для добавления сотрудников.
+      operationId: createUser
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+      responses:
+        '201':
+          description: Пользователь создан
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Ошибка валидации или email уже занят
+
+  # ==================== Organization ====================
+  /organization:
+    get:
+      tags:
+        - Organization
+      summary: Получить все организации
+      description: Возвращает список всех организаций, к которым имеет доступ текущий пользователь.
+      operationId: getAllOrganizations
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Список организаций
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          organizations:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/OrganizationResponse'
+
+  /organization/{id}:
+    get:
+      tags:
+        - Organization
+      summary: Получить организацию по ID
+      description: Возвращает полную информацию об организации, включая пользователей и языки.
+      operationId: getOrganizationById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID организации
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Организация найдена
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/OrganizationResponse'
+        '404':
+          description: Организация не найдена
+    patch:
+      tags:
+        - Organization
+      summary: Обновить организацию
+      description: Обновляет данные организации. Доступно только администратору организации.
+      operationId: updateOrganization
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID организации
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrganizationRequest'
+      responses:
+        '200':
+          description: Организация обновлена
+        '403':
+          description: Нет прав на редактирование
+        '404':
+          description: Организация не найдена
+
+  /organization/{id}/users:
+    post:
+      tags:
+        - Organization
+      summary: Добавить пользователя в организацию
+      description: Добавляет существующего пользователя в организацию. Доступно только администратору организации.
+      operationId: addUserToOrganization
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID организации
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddUserToOrgRequest'
+      responses:
+        '200':
+          description: Пользователь добавлен
+        '400':
+          description: Пользователь уже в организации
+        '404':
+          description: Организация или пользователь не найдены
+    delete:
+      tags:
+        - Organization
+      summary: Удалить пользователя из организации
+      description: Удаляет пользователя из организации. Нельзя удалить администратора организации.
+      operationId: removeUserFromOrganization
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID организации
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RemoveUserFromOrgRequest'
+      responses:
+        '200':
+          description: Пользователь удалён
+        '400':
+          description: Нельзя удалить администратора
+        '404':
+          description: Пользователь не найден в организации
+
+  /organization/{id}/languages:
+    get:
+      tags:
+        - Organization
+      summary: Получить языки организации
+      description: Возвращает список языков, поддерживаемых организацией.
+      operationId: getOrganizationLanguages
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID организации
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список языков
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/LanguageResponse'
+    post:
+      tags:
+        - Organization
+      summary: Добавить язык в организацию
+      description: Добавляет поддержку нового языка для организации.
+      operationId: addLanguageToOrganization
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID организации
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddLanguageToOrgRequest'
+      responses:
+        '200':
+          description: Язык добавлен
+        '400':
+          description: Язык уже добавлен
+    delete:
+      tags:
+        - Organization
+      summary: Удалить язык из организации
+      description: Убирает поддержку языка для организации.
+      operationId: removeLanguageFromOrganization
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID организации
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RemoveLanguageFromOrgRequest'
+      responses:
+        '200':
+          description: Язык удалён
+
+  # ==================== Languages ====================
+  /languages:
+    get:
+      tags:
+        - Language
+      summary: Получить все языки
+      description: Возвращает список всех доступных языков в системе.
+      operationId: getAllLanguages
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Список языков
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          languages:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/LanguageResponse'
+    post:
+      tags:
+        - Language
+      summary: Создать язык
+      description: Создаёт новый язык в системе.
+      operationId: createLanguage
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLanguageRequest'
+      responses:
+        '201':
+          description: Язык создан
+        '400':
+          description: Язык с таким кодом уже существует
+
+  /languages/{id}:
+    get:
+      tags:
+        - Language
+      summary: Получить язык по ID
+      description: Возвращает информацию о языке по его ID.
+      operationId: getLanguageById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID языка
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Язык найден
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/LanguageResponse'
+        '404':
+          description: Язык не найден
+    patch:
+      tags:
+        - Language
+      summary: Обновить язык
+      description: Обновляет данные языка.
+      operationId: updateLanguage
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID языка
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLanguageRequest'
+      responses:
+        '200':
+          description: Язык обновлён
+        '404':
+          description: Язык не найден
+    delete:
+      tags:
+        - Language
+      summary: Удалить язык
+      description: Удаляет язык из системы.
+      operationId: deleteLanguage
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID языка
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Язык удалён
+        '400':
+          description: Язык используется и не может быть удалён
+
+  # ==================== Restaurant ====================
+  /restaurants:
+    get:
+      tags:
+        - Restaurant
+      summary: Получить все рестораны
+      description: Возвращает список всех ресторанов организации текущего пользователя.
+      operationId: getAllRestaurants
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Список ресторанов
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          restaurants:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/RestaurantResponse'
+    post:
+      tags:
+        - Restaurant
+      summary: Создать ресторан
+      description: Создаёт новый ресторан для организации.
+      operationId: createRestaurant
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRestaurantRequest'
+      responses:
+        '201':
+          description: Ресторан создан
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/RestaurantResponse'
+        '400':
+          description: Ошибка валидации
+
+  /restaurants/{id}:
+    get:
+      tags:
+        - Restaurant
+      summary: Получить ресторан по ID
+      description: Возвращает полную информацию о ресторане.
+      operationId: getRestaurantById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID ресторана
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Ресторан найден
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/RestaurantResponse'
+        '404':
+          description: Ресторан не найден
+    put:
+      tags:
+        - Restaurant
+      summary: Обновить ресторан
+      description: Полностью обновляет данные ресторана.
+      operationId: updateRestaurant
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID ресторана
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRestaurantRequest'
+      responses:
+        '200':
+          description: Ресторан обновлён
+        '404':
+          description: Ресторан не найден
+    delete:
+      tags:
+        - Restaurant
+      summary: Удалить ресторан
+      description: Удаляет ресторан и все связанные данные (столы, чаты).
+      operationId: deleteRestaurant
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID ресторана
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Ресторан удалён
+        '404':
+          description: Ресторан не найден
+
+  /restaurants/organization/{organization_id}:
+    get:
+      tags:
+        - Restaurant
+      summary: Получить рестораны организации
+      description: Возвращает список ресторанов конкретной организации.
+      operationId: getRestaurantsByOrganization
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: organization_id
+          in: path
+          required: true
+          description: ID организации
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список ресторанов
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/RestaurantResponse'
+
+  # ==================== Tables ====================
+  /tables:
+    get:
+      tags:
+        - Table
+      summary: Получить все столы
+      description: Возвращает список всех столов во всех ресторанах организации.
+      operationId: getAllTables
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Список столов
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          tables:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/TableResponse'
+    post:
+      tags:
+        - Table
+      summary: Создать стол
+      description: Создаёт новый стол в ресторане.
+      operationId: createTable
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTableRequest'
+      responses:
+        '201':
+          description: Стол создан
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/TableResponse'
+
+  /tables/{id}:
+    get:
+      tags:
+        - Table
+      summary: Получить стол по ID
+      description: Возвращает информацию о столе.
+      operationId: getTableById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID стола
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Стол найден
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/TableResponse'
+        '404':
+          description: Стол не найден
+    put:
+      tags:
+        - Table
+      summary: Обновить стол
+      description: Обновляет данные стола.
+      operationId: updateTable
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID стола
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTableRequest'
+      responses:
+        '200':
+          description: Стол обновлён
+        '404':
+          description: Стол не найден
+    delete:
+      tags:
+        - Table
+      summary: Удалить стол
+      description: Удаляет стол из ресторана.
+      operationId: deleteTable
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID стола
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Стол удалён
+        '404':
+          description: Стол не найден
+
+  /tables/restaurant/{restaurant_id}:
+    get:
+      tags:
+        - Table
+      summary: Получить столы ресторана
+      description: Возвращает список столов конкретного ресторана.
+      operationId: getTablesByRestaurant
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          description: ID ресторана
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список столов
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TableResponse'
+
+  # ==================== Menu Categories ====================
+  /categories:
+    get:
+      tags:
+        - Menu Category
+      summary: Получить все категории меню
+      description: Возвращает список всех категорий меню организации (напитки, горячее, десерты и т.д.)
+      operationId: getAllCategories
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Список категорий
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          categories:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/MenuCategoryResponse'
+    post:
+      tags:
+        - Menu Category
+      summary: Создать категорию меню
+      description: Создаёт новую категорию меню.
+      operationId: createCategory
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMenuCategoryRequest'
+      responses:
+        '201':
+          description: Категория создана
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/MenuCategoryResponse'
+
+  /categories/{id}:
+    get:
+      tags:
+        - Menu Category
+      summary: Получить категорию по ID
+      description: Возвращает информацию о категории меню.
+      operationId: getCategoryById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID категории
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Категория найдена
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/MenuCategoryResponse'
+        '404':
+          description: Категория не найдена
+    delete:
+      tags:
+        - Menu Category
+      summary: Удалить категорию
+      description: Удаляет категорию меню. Категория должна быть пустой (не содержать блюд).
+      operationId: deleteCategory
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID категории
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Категория удалена
+        '400':
+          description: Категория содержит блюда и не может быть удалена
+        '404':
+          description: Категория не найдена
+
+  # ==================== Dishes ====================
+  /dishes:
+    get:
+      tags:
+        - Dish
+      summary: Получить все блюда
+      description: Возвращает список всех блюд организации с их ингредиентами.
+      operationId: getAllDishes
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Список блюд
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          dishes:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/DishResponse'
+    post:
+      tags:
+        - Dish
+      summary: Создать блюдо
+      description: Создаёт новое блюдо с ингредиентами.
+      operationId: createDish
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDishRequest'
+      responses:
+        '201':
+          description: Блюдо создано
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/DishResponse'
+
+  /dishes/{id}:
+    get:
+      tags:
+        - Dish
+      summary: Получить блюдо по ID
+      description: Возвращает полную информацию о блюде включая ингредиенты.
+      operationId: getDishById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID блюда
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Блюдо найдено
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/DishResponse'
+        '404':
+          description: Блюдо не найдено
+    put:
+      tags:
+        - Dish
+      summary: Обновить блюдо
+      description: Полностью обновляет данные блюда и его ингредиенты.
+      operationId: updateDish
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID блюда
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDishRequest'
+      responses:
+        '200':
+          description: Блюдо обновлено
+        '404':
+          description: Блюдо не найдено
+    delete:
+      tags:
+        - Dish
+      summary: Удалить блюдо
+      description: Удаляет блюдо из меню.
+      operationId: deleteDish
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID блюда
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Блюдо удалено
+        '404':
+          description: Блюдо не найдено
+
+  /dishes/category:
+    get:
+      tags:
+        - Dish
+      summary: Получить блюда по категориям
+      description: Возвращает блюда, сгруппированные по категориям меню. Удобно для отображения меню.
+      operationId: getDishesByCategory
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Блюда по категориям
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/DishByCategoryResponse'
+
+  /dishes/dish-of-day:
+    get:
+      tags:
+        - Dish
+      summary: Получить блюдо дня
+      description: Возвращает текущее блюдо дня организации.
+      operationId: getDishOfDay
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Блюдо дня
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/DishResponse'
+        '404':
+          description: Блюдо дня не установлено
+
+  /dishes/dish-of-day/{id}:
+    post:
+      tags:
+        - Dish
+      summary: Установить блюдо дня
+      description: Устанавливает указанное блюдо как блюдо дня.
+      operationId: setDishOfDay
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID блюда для установки как блюдо дня
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Блюдо дня установлено
+        '404':
+          description: Блюдо не найдено
+
+  # ==================== Questions ====================
+  /questions:
+    get:
+      tags:
+        - Question
+      summary: Получить вопросы с фильтрацией
+      description: |
+        Возвращает список вопросов для чат-бота организации.
+        Поддерживает фильтрацию по языку и типу чата.
+
+        **Примеры запросов:**
+        - `GET /questions` — все вопросы организации
+        - `GET /questions?language=ru` — вопросы на русском языке
+        - `GET /questions?chat_type=reservation` — вопросы для бронирования
+        - `GET /questions?language=ru&chat_type=reservation` — комбинированный фильтр
+      operationId: getAllQuestions
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: language
+          in: query
+          required: false
+          description: Код языка для фильтрации (например, en, ru)
+          schema:
+            type: string
+          example: ru
+        - name: chat_type
+          in: query
+          required: false
+          description: |
+            Тип чата для фильтрации:
+            - `reservation` — вопросы для чата бронирования
+            - `menu` — вопросы для чата с информацией о меню
+          schema:
+            type: string
+            enum: [reservation, menu]
+          example: menu
+      responses:
+        '200':
+          description: Список вопросов
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          questions:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/QuestionResponse'
+    post:
+      tags:
+        - Question
+      summary: Создать вопрос
+      description: |
+        Создаёт новый вопрос для чат-бота.
+        Можно указать язык и тип чата (reservation/menu).
+        По умолчанию тип чата — "menu".
+      operationId: createQuestion
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQuestionRequest'
+      responses:
+        '201':
+          description: Вопрос создан
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/QuestionResponse'
+
+  /questions/language/{code}:
+    get:
+      tags:
+        - Question
+      summary: Получить вопросы по языку
+      description: Возвращает список вопросов на указанном языке.
+      operationId: getQuestionsByLanguage
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: code
+          in: path
+          required: true
+          description: ISO код языка (например, en, ru)
+          schema:
+            type: string
+          example: en
+      responses:
+        '200':
+          description: Вопросы на языке
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/QuestionResponse'
+
+  /questions/{id}:
+    put:
+      tags:
+        - Question
+      summary: Обновить вопрос
+      description: |
+        Обновляет вопрос: текст, язык и/или тип чата.
+        Для удаления привязки к языку передать пустую строку в languageCode.
+      operationId: updateQuestion
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID вопроса
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQuestionRequest'
+      responses:
+        '200':
+          description: Вопрос обновлён
+        '404':
+          description: Вопрос не найден
+    delete:
+      tags:
+        - Question
+      summary: Удалить вопрос
+      description: Удаляет вопрос из системы.
+      operationId: deleteQuestion
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID вопроса
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Вопрос удалён
+        '404':
+          description: Вопрос не найден
+
+  # ==================== QR Codes ====================
+  /qrcodes/restaurant/{restaurant_id}:
+    get:
+      tags:
+        - QR Code
+      summary: Получить QR-код ресторана
+      description: Генерирует и возвращает QR-код для ресторана. QR-код ведёт на страницу чата ресторана.
+      operationId: getRestaurantQRCode
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          description: ID ресторана
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: QR-код в формате PNG
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Ресторан не найден
+
+  /qrcodes/restaurant/{restaurant_id}/download:
+    get:
+      tags:
+        - QR Code
+      summary: Скачать QR-код ресторана
+      description: Генерирует QR-код и отправляет его как файл для скачивания.
+      operationId: downloadRestaurantQRCode
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          description: ID ресторана
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Файл QR-кода
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /qrcodes/restaurant/{restaurant_id}/table/{table_id}:
+    get:
+      tags:
+        - QR Code
+      summary: Получить QR-код стола
+      description: Генерирует QR-код для конкретного стола. QR-код ведёт на страницу чата с привязкой к столу.
+      operationId: getTableQRCode
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          description: ID ресторана
+          schema:
+            type: integer
+        - name: table_id
+          in: path
+          required: true
+          description: ID стола
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: QR-код в формате PNG
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Ресторан или стол не найден
+
+  /qrcodes/restaurant/{restaurant_id}/table/{table_id}/download:
+    get:
+      tags:
+        - QR Code
+      summary: Скачать QR-код стола
+      description: Генерирует QR-код стола и отправляет как файл для скачивания.
+      operationId: downloadTableQRCode
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          description: ID ресторана
+          schema:
+            type: integer
+        - name: table_id
+          in: path
+          required: true
+          description: ID стола
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Файл QR-кода
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  # ==================== File Upload ====================
+  /uploads/images:
+    post:
+      tags:
+        - File Upload
+      summary: Загрузить изображение
+      description: |
+        Загружает изображение на сервер и возвращает URL для доступа к нему.
+        Поддерживаемые форматы: JPEG, PNG, GIF, WebP.
+        Максимальный размер: 10MB.
+      operationId: uploadImage
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Файл изображения
+      responses:
+        '200':
+          description: Изображение загружено
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          url:
+                            type: string
+                            description: URL загруженного изображения
+        '400':
+          description: Неверный формат файла или превышен размер
+
+  # ==================== Chat - Table endpoints ====================
+  /chat/table/session/start:
+    post:
+      tags:
+        - Chat
+      summary: Начать чат-сессию от стола
+      description: |
+        Создаёт новую чат-сессию для гостей за столом.
+        Если активная сессия уже существует, возвращает её.
+      operationId: startTableSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartTableSessionRequest'
+      responses:
+        '200':
+          description: Сессия создана/возвращена
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ChatSessionResponse'
+
+  /chat/table/session/close/{session_id}:
+    post:
+      tags:
+        - Chat
+      summary: Закрыть чат-сессию стола
+      description: Закрывает активную чат-сессию. После закрытия нельзя отправлять сообщения.
+      operationId: closeTableSession
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: ID сессии
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Сессия закрыта
+        '404':
+          description: Сессия не найдена
+
+  /chat/table/message/send:
+    post:
+      tags:
+        - Chat
+      summary: Отправить сообщение от стола
+      description: Отправляет сообщение от гостя за столом. Бот может автоматически ответить.
+      operationId: sendTableMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendTableMessageRequest'
+      responses:
+        '200':
+          description: Сообщение отправлено
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ChatMessageResponse'
+        '400':
+          description: Сессия закрыта или не найдена
+
+  /chat/table/session/{session_id}/messages:
+    get:
+      tags:
+        - Chat
+      summary: Получить сообщения сессии стола
+      description: Возвращает все сообщения указанной чат-сессии.
+      operationId: getTableSessionMessages
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: ID сессии
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список сообщений
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ChatMessageResponse'
+        '404':
+          description: Сессия не найдена
+
+  /chat/table/session/{table_id}:
+    get:
+      tags:
+        - Chat
+      summary: Получить сессии стола
+      description: Возвращает список всех чат-сессий для указанного стола.
+      operationId: getTableSessions
+      parameters:
+        - name: table_id
+          in: path
+          required: true
+          description: ID стола
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список сессий
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ChatSessionResponse'
+
+  # ==================== Chat - Restaurant endpoints ====================
+  /chat/restaurant/{restaurant_id}:
+    get:
+      tags:
+        - Chat
+      summary: Получить чаты ресторана (legacy)
+      description: |
+        [Устаревший endpoint] Возвращает все чаты ресторана.
+        Рекомендуется использовать /chat/restaurant/sessions/{restaurant_id}.
+      operationId: getRestaurantChats
+      deprecated: true
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          description: ID ресторана
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Чаты ресторана
+
+  /chat/restaurant/session/start:
+    post:
+      tags:
+        - Chat
+      summary: Начать чат-сессию ресторана
+      description: Создаёт чат-сессию от имени ресторана.
+      operationId: startRestaurantSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartRestaurantSessionRequest'
+      responses:
+        '200':
+          description: Сессия создана
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ChatSessionResponse'
+
+  /chat/restaurant/session/close/{session_id}:
+    post:
+      tags:
+        - Chat
+      summary: Закрыть чат-сессию ресторана
+      description: Закрывает чат-сессию от имени ресторана.
+      operationId: closeRestaurantSession
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: ID сессии
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Сессия закрыта
+
+  /chat/restaurant/message/send:
+    post:
+      tags:
+        - Chat
+      summary: Отправить сообщение от ресторана
+      description: Отправляет сообщение от имени ресторана в чат-сессию.
+      operationId: sendRestaurantMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendRestaurantMessageRequest'
+      responses:
+        '200':
+          description: Сообщение отправлено
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ChatMessageResponse'
+
+  /chat/restaurant/session/{session_id}/messages:
+    get:
+      tags:
+        - Chat
+      summary: Получить сообщения сессии ресторана
+      description: Возвращает все сообщения указанной сессии для просмотра рестораном.
+      operationId: getRestaurantSessionMessages
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: ID сессии
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список сообщений
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ChatMessageResponse'
+
+  /chat/restaurant/sessions/{restaurant_id}:
+    get:
+      tags:
+        - Chat
+      summary: Получить все сессии ресторана
+      description: Возвращает список всех чат-сессий ресторана (активных и закрытых).
+      operationId: getRestaurantSessions
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          description: ID ресторана
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список сессий
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ChatSessionResponse'
+
+  # ==================== Reservation ====================
+  # Public Reservation API (без авторизации)
+  /reservations/available/{restaurant_id}:
+    get:
+      tags:
+        - Reservation
+      summary: Получить доступные слоты для бронирования
+      description: |
+        Возвращает список доступных временных слотов для бронирования столика.
+        **Публичный эндпоинт** - не требует авторизации.
+        Используется AI-ботом в чате для бронирования столиков.
+      operationId: getAvailableSlots
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          description: ID ресторана
+          schema:
+            type: integer
+        - name: date
+          in: query
+          required: true
+          description: Дата для проверки доступности (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: guest_count
+          in: query
+          required: false
+          description: Количество гостей (по умолчанию 2)
+          schema:
+            type: integer
+            default: 2
+      responses:
+        '200':
+          description: Список доступных слотов
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AvailableSlotsResponse'
+        '404':
+          description: Ресторан не найден
+
+  /reservations/my:
+    get:
+      tags:
+        - Reservation
+      summary: Получить мои бронирования по телефону
+      description: |
+        Возвращает список бронирований клиента по номеру телефона.
+        **Публичный эндпоинт** - не требует авторизации.
+        Используется для просмотра бронирований анонимными пользователями.
+      operationId: getMyReservations
+      parameters:
+        - name: phone
+          in: query
+          required: true
+          description: Номер телефона клиента
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список бронирований клиента
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CustomerReservationsResponse'
+
+  /reservations:
+    post:
+      tags:
+        - Reservation
+      summary: Создать бронирование (публичное)
+      description: |
+        Создаёт новое бронирование столика.
+        **Публичный эндпоинт** - не требует авторизации.
+        Используется AI-ботом в чате для бронирования столиков.
+      operationId: createReservationPublic
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReservationRequest'
+      responses:
+        '201':
+          description: Бронирование создано
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ReservationResponse'
+        '400':
+          description: Ошибка валидации
+        '409':
+          description: Столик уже занят в указанное время
+
+    get:
+      tags:
+        - Reservation
+      summary: Получить все бронирования
+      description: Возвращает список всех бронирований организации. **Требует авторизацию.**
+      operationId: getAllReservations
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Список бронирований
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ReservationListResponse'
+        '401':
+          description: Не авторизован
+
+  /reservations/{id}:
+    get:
+      tags:
+        - Reservation
+      summary: Получить бронирование по ID
+      description: Возвращает детальную информацию о бронировании. **Требует авторизацию.**
+      operationId: getReservationById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID бронирования
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Данные бронирования
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ReservationResponse'
+        '404':
+          description: Бронирование не найдено
+
+    patch:
+      tags:
+        - Reservation
+      summary: Обновить бронирование
+      description: Обновляет данные бронирования. **Требует авторизацию.**
+      operationId: updateReservation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID бронирования
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateReservationRequest'
+      responses:
+        '200':
+          description: Бронирование обновлено
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ReservationResponse'
+        '404':
+          description: Бронирование не найдено
+
+    delete:
+      tags:
+        - Reservation
+      summary: Удалить бронирование
+      description: Полностью удаляет бронирование из системы. **Требует авторизацию.**
+      operationId: deleteReservation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID бронирования
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Бронирование удалено
+        '404':
+          description: Бронирование не найдено
+
+  /reservations/restaurant/{restaurant_id}:
+    get:
+      tags:
+        - Reservation
+      summary: Получить бронирования ресторана
+      description: Возвращает список бронирований для указанного ресторана. **Требует авторизацию.**
+      operationId: getReservationsByRestaurant
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          description: ID ресторана
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список бронирований ресторана
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ReservationListResponse'
+        '404':
+          description: Ресторан не найден
+
+  /reservations/{id}/cancel:
+    post:
+      tags:
+        - Reservation
+      summary: Отменить бронирование (защищённое)
+      description: Отменяет бронирование. Устанавливает статус "cancelled". **Требует авторизацию.**
+      operationId: cancelReservation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID бронирования
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Бронирование отменено
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ReservationResponse'
+        '404':
+          description: Бронирование не найдено
+
+  /reservations/{id}/cancel/public:
+    post:
+      tags:
+        - Reservation
+      summary: Отменить бронирование по телефону (публичное)
+      description: |
+        Отменяет бронирование с верификацией по номеру телефона.
+        **Публичный эндпоинт** - не требует авторизации.
+        Используется AI-ботом в чате для отмены бронирований.
+      operationId: cancelReservationByPhone
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID бронирования
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelReservationByPhoneRequest'
+      responses:
+        '200':
+          description: Бронирование отменено
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ReservationResponse'
+        '403':
+          description: Телефон не совпадает с бронированием
+        '404':
+          description: Бронирование не найдено
+
+  # ==================== Subscription ====================
+  /subscriptions:
+    get:
+      tags:
+        - Subscription
+      summary: Получить все подписки
+      description: Возвращает список всех подписок. Доступно администраторам системы.
+      operationId: getAllSubscriptions
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Список подписок
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          subscriptions:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/SubscriptionResponse'
+    post:
+      tags:
+        - Subscription
+      summary: Создать подписку
+      description: Создаёт новую подписку для организации.
+      operationId: createSubscription
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSubscriptionRequest'
+      responses:
+        '201':
+          description: Подписка создана
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SubscriptionResponse'
+        '400':
+          description: У организации уже есть активная подписка
+
+  /subscriptions/{id}:
+    get:
+      tags:
+        - Subscription
+      summary: Получить подписку по ID
+      description: Возвращает информацию о подписке.
+      operationId: getSubscriptionById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID подписки
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Подписка найдена
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SubscriptionResponse'
+        '404':
+          description: Подписка не найдена
+    put:
+      tags:
+        - Subscription
+      summary: Обновить подписку
+      description: Обновляет параметры подписки.
+      operationId: updateSubscription
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID подписки
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSubscriptionRequest'
+      responses:
+        '200':
+          description: Подписка обновлена
+        '404':
+          description: Подписка не найдена
+    delete:
+      tags:
+        - Subscription
+      summary: Удалить подписку
+      description: Полностью удаляет подписку из системы.
+      operationId: deleteSubscription
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID подписки
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Подписка удалена
+        '404':
+          description: Подписка не найдена
+
+  /subscriptions/organization/{organizationId}:
+    get:
+      tags:
+        - Subscription
+      summary: Получить подписки организации
+      description: Возвращает список всех подписок организации (текущих и прошлых).
+      operationId: getSubscriptionsByOrganization
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          description: ID организации
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Подписки организации
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SubscriptionResponse'
+
+  /subscriptions/organization/{organizationId}/active:
+    get:
+      tags:
+        - Subscription
+      summary: Получить активную подписку организации
+      description: Возвращает текущую активную подписку организации.
+      operationId: getActiveSubscriptionByOrganization
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          description: ID организации
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Активная подписка
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SubscriptionResponse'
+        '404':
+          description: Активная подписка не найдена
+
+  /subscriptions/{id}/extend:
+    post:
+      tags:
+        - Subscription
+      summary: Продлить подписку
+      description: Добавляет дополнительные месяцы к текущей подписке.
+      operationId: extendSubscription
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID подписки
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtendSubscriptionRequest'
+      responses:
+        '200':
+          description: Подписка продлена
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SubscriptionResponse'
+        '404':
+          description: Подписка не найдена
+
+  /subscriptions/{id}/deactivate:
+    post:
+      tags:
+        - Subscription
+      summary: Деактивировать подписку
+      description: Досрочно деактивирует подписку.
+      operationId: deactivateSubscription
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID подписки
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Подписка деактивирована
+        '404':
+          description: Подписка не найдена
+
+  # ==================== Admin ====================
+  /admin/stats:
+    get:
+      tags:
+        - Admin
+      summary: Получить статистику системы
+      description: |
+        Возвращает общую статистику системы для дашборда администратора.
+        Включает количество пользователей, организаций, ресторанов и т.д.
+        **Требует роль admin.**
+      operationId: getAdminStats
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Статистика системы
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AdminStatsResponse'
+        '403':
+          description: Недостаточно прав (требуется роль admin)
+
+  /admin/users:
+    get:
+      tags:
+        - Admin
+      summary: Получить всех пользователей
+      description: |
+        Возвращает список всех пользователей системы с пагинацией.
+        **Требует роль admin.**
+      operationId: getAdminUsers
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          description: Размер страницы
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Список пользователей
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AdminUsersListResponse'
+        '403':
+          description: Недостаточно прав
+
+  /admin/users/{id}:
+    get:
+      tags:
+        - Admin
+      summary: Получить пользователя по ID
+      description: |
+        Возвращает подробную информацию о пользователе.
+        **Требует роль admin.**
+      operationId: getAdminUserById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID пользователя
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Пользователь найден
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AdminUserResponse'
+        '404':
+          description: Пользователь не найден
+    delete:
+      tags:
+        - Admin
+      summary: Удалить пользователя
+      description: |
+        Удаляет пользователя из системы.
+        **Требует роль admin.**
+      operationId: deleteAdminUser
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID пользователя
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Пользователь удалён
+        '400':
+          description: Нельзя удалить себя
+        '404':
+          description: Пользователь не найден
+
+  /admin/users/{id}/status:
+    patch:
+      tags:
+        - Admin
+      summary: Изменить статус пользователя
+      description: |
+        Активирует или деактивирует аккаунт пользователя.
+        Деактивированный пользователь не может войти в систему.
+        **Требует роль admin.**
+      operationId: updateAdminUserStatus
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID пользователя
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserStatusRequest'
+      responses:
+        '200':
+          description: Статус обновлён
+        '404':
+          description: Пользователь не найден
+
+  /admin/users/{id}/role:
+    patch:
+      tags:
+        - Admin
+      summary: Изменить роль пользователя
+      description: |
+        Изменяет роль пользователя (user/admin).
+        **Требует роль admin.**
+      operationId: updateAdminUserRole
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID пользователя
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRoleRequest'
+      responses:
+        '200':
+          description: Роль обновлена
+        '400':
+          description: Нельзя изменить свою роль
+        '404':
+          description: Пользователь не найден
+
+  /admin/organizations:
+    get:
+      tags:
+        - Admin
+      summary: Получить все организации
+      description: |
+        Возвращает список всех организаций с дополнительной статистикой.
+        **Требует роль admin.**
+      operationId: getAdminOrganizations
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          description: Размер страницы
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Список организаций
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AdminOrganizationsListResponse'
+        '403':
+          description: Недостаточно прав
+
+  /admin/organizations/{id}:
+    get:
+      tags:
+        - Admin
+      summary: Получить организацию по ID
+      description: |
+        Возвращает подробную информацию об организации.
+        **Требует роль admin.**
+      operationId: getAdminOrganizationById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID организации
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Организация найдена
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AdminOrganizationResponse'
+        '404':
+          description: Организация не найдена
+    delete:
+      tags:
+        - Admin
+      summary: Удалить организацию
+      description: |
+        Удаляет организацию и все связанные данные (рестораны, блюда и т.д.).
+        **Требует роль admin. Операция необратима!**
+      operationId: deleteAdminOrganization
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID организации
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Организация удалена
+        '404':
+          description: Организация не найдена
+
+  /admin/dishes:
+    get:
+      tags:
+        - Admin
+      summary: Получить все блюда для модерации
+      description: |
+        Возвращает список всех блюд в системе для модерации контента.
+        **Требует роль admin.**
+      operationId: getAdminDishes
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          description: Размер страницы
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Список блюд
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AdminDishesListResponse'
+        '403':
+          description: Недостаточно прав
+
+  /admin/dishes/{id}:
+    delete:
+      tags:
+        - Admin
+      summary: Удалить блюдо (модерация)
+      description: |
+        Удаляет блюдо из системы в рамках модерации контента.
+        **Требует роль admin.**
+      operationId: deleteAdminDish
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID блюда
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Блюдо удалено
+        '404':
+          description: Блюдо не найдено
+
+  /admin/logs:
+    get:
+      tags:
+        - Admin
+      summary: Получить логи действий администраторов
+      description: |
+        Возвращает журнал всех действий администраторов для аудита.
+        **Требует роль admin.**
+      operationId: getAdminLogs
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          description: Размер страницы
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Список логов
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AdminLogsListResponse'
+        '403':
+          description: Недостаточно прав
+
+  /admin/logs/me:
+    get:
+      tags:
+        - Admin
+      summary: Получить мои логи действий
+      description: |
+        Возвращает журнал действий текущего администратора.
+        **Требует роль admin.**
+      operationId: getMyAdminLogs
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          description: Размер страницы
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Мои логи
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AdminLogsListResponse'
+        '403':
+          description: Недостаточно прав

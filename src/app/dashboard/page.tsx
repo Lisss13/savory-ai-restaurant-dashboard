@@ -142,7 +142,7 @@ export default function DashboardPage() {
 
   const todayReservations = reservations?.filter((r: Reservation) => {
     const today = new Date().toISOString().split('T')[0];
-    return r.reservation_date === today;
+    return r.date === today;
   }) || [];
 
   const activeChats = chatSessions?.filter((c: ChatSession) => c.active) || [];
@@ -276,10 +276,10 @@ export default function DashboardPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium truncate">
-                              {reservation.customer_name}
+                              {reservation.guest_name}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {reservation.reservation_date} в {reservation.start_time} • {reservation.guest_count} гостей
+                              {reservation.date} в {reservation.time} • {reservation.guest_count} гостей
                             </p>
                           </div>
                           <Badge
