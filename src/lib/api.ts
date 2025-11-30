@@ -457,26 +457,38 @@ export const questionApi = {
   },
 };
 
-// QR Code API
+// QR Code API - using local API routes as proxy to avoid CORS
 export const qrCodeApi = {
   getRestaurantQR: async (restaurantId: number): Promise<Blob> => {
-    const response = await apiClient.get(`/qrcodes/restaurant/${restaurantId}`, { responseType: 'blob' });
-    return response.data;
+    const response = await fetch(`/api/qrcode/restaurant/${restaurantId}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch QR code: ${response.status}`);
+    }
+    return response.blob();
   },
 
   downloadRestaurantQR: async (restaurantId: number): Promise<Blob> => {
-    const response = await apiClient.get(`/qrcodes/restaurant/${restaurantId}/download`, { responseType: 'blob' });
-    return response.data;
+    const response = await fetch(`/api/qrcode/restaurant/${restaurantId}/download`);
+    if (!response.ok) {
+      throw new Error(`Failed to download QR code: ${response.status}`);
+    }
+    return response.blob();
   },
 
   getTableQR: async (restaurantId: number, tableId: number): Promise<Blob> => {
-    const response = await apiClient.get(`/qrcodes/restaurant/${restaurantId}/table/${tableId}`, { responseType: 'blob' });
-    return response.data;
+    const response = await fetch(`/api/qrcode/restaurant/${restaurantId}/table/${tableId}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch QR code: ${response.status}`);
+    }
+    return response.blob();
   },
 
   downloadTableQR: async (restaurantId: number, tableId: number): Promise<Blob> => {
-    const response = await apiClient.get(`/qrcodes/restaurant/${restaurantId}/table/${tableId}/download`, { responseType: 'blob' });
-    return response.data;
+    const response = await fetch(`/api/qrcode/restaurant/${restaurantId}/table/${tableId}/download`);
+    if (!response.ok) {
+      throw new Error(`Failed to download QR code: ${response.status}`);
+    }
+    return response.blob();
   },
 };
 

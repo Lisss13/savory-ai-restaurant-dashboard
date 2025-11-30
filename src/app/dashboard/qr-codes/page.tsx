@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Download, QrCode, Store, Armchair, Loader2 } from 'lucide-react';
+import { Download, Store, Armchair, Loader2 } from 'lucide-react';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 import { qrCodeApi, tableApi } from '@/lib/api';
 import { useRestaurantStore } from '@/store/restaurant';
 import type { Table } from '@/types';
@@ -24,7 +25,7 @@ export default function QRCodesPage() {
   const { selectedRestaurant } = useRestaurantStore();
   const [selectedTableId, setSelectedTableId] = useState<string>('');
   const [isDownloading, setIsDownloading] = useState(false);
-  const [qrPreview, setQrPreview] = useState<string | null>(null);
+  const [tableQrPreview, setTableQrPreview] = useState<string | null>(null);
 
   const { data: tables } = useQuery({
     queryKey: ['tables', selectedRestaurant?.id],
@@ -36,23 +37,24 @@ export default function QRCodesPage() {
     enabled: !!selectedRestaurant,
   });
 
-  const loadRestaurantQR = async () => {
-    if (!selectedRestaurant) return;
-    try {
+  // Auto-load restaurant QR code
+  const { data: restaurantQrUrl, isLoading: isLoadingRestaurantQr } = useQuery({
+    queryKey: ['restaurantQR', selectedRestaurant?.id],
+    queryFn: async () => {
+      if (!selectedRestaurant) return null;
       const blob = await qrCodeApi.getRestaurantQR(selectedRestaurant.id);
-      const url = URL.createObjectURL(blob);
-      setQrPreview(url);
-    } catch {
-      toast.error('Ошибка загрузки QR-кода');
-    }
-  };
+      return URL.createObjectURL(blob);
+    },
+    enabled: !!selectedRestaurant,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
 
   const loadTableQR = async (tableId: number) => {
     if (!selectedRestaurant) return;
     try {
       const blob = await qrCodeApi.getTableQR(selectedRestaurant.id, tableId);
       const url = URL.createObjectURL(blob);
-      setQrPreview(url);
+      setTableQrPreview(url);
     } catch {
       toast.error('Ошибка загрузки QR-кода');
     }
@@ -160,42 +162,33 @@ export default function QRCodesPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="aspect-square max-w-xs mx-auto bg-white rounded-lg p-4 flex items-center justify-center">
-                    {qrPreview ? (
+                    {isLoadingRestaurantQr ? (
+                      <Skeleton className="w-full h-full" />
+                    ) : restaurantQrUrl ? (
                       <img
-                        src={qrPreview}
+                        src={restaurantQrUrl}
                         alt="QR Code"
                         className="w-full h-full object-contain"
                       />
                     ) : (
                       <div className="text-center text-muted-foreground">
-                        <QrCode className="h-16 w-16 mx-auto mb-2" />
-                        <p className="text-sm">Нажмите "Сгенерировать" для предпросмотра</p>
+                        <p className="text-sm">Ошибка загрузки QR-кода</p>
                       </div>
                     )}
                   </div>
 
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      onClick={loadRestaurantQR}
-                    >
-                      <QrCode className="mr-2 h-4 w-4" />
-                      Сгенерировать
-                    </Button>
-                    <Button
-                      className="flex-1"
-                      onClick={downloadRestaurantQR}
-                      disabled={isDownloading}
-                    >
-                      {isDownloading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Download className="mr-2 h-4 w-4" />
-                      )}
-                      Скачать
-                    </Button>
-                  </div>
+                  <Button
+                    className="w-full"
+                    onClick={downloadRestaurantQR}
+                    disabled={isDownloading || !restaurantQrUrl}
+                  >
+                    {isDownloading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="mr-2 h-4 w-4" />
+                    )}
+                    Скачать
+                  </Button>
                 </CardContent>
               </Card>
 
@@ -266,15 +259,14 @@ export default function QRCodesPage() {
                   </div>
 
                   <div className="aspect-square max-w-xs mx-auto bg-white rounded-lg p-4 flex items-center justify-center">
-                    {qrPreview && selectedTableId ? (
+                    {tableQrPreview && selectedTableId ? (
                       <img
-                        src={qrPreview}
+                        src={tableQrPreview}
                         alt="QR Code"
                         className="w-full h-full object-contain"
                       />
                     ) : (
                       <div className="text-center text-muted-foreground">
-                        <QrCode className="h-16 w-16 mx-auto mb-2" />
                         <p className="text-sm">Выберите стол для предпросмотра</p>
                       </div>
                     )}
