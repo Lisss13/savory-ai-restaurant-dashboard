@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useTheme } from 'next-themes';
-import { Moon, Sun, Store, Check, ChevronDown } from 'lucide-react';
+import { Moon, Sun, Store, Check, ChevronDown, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -21,6 +21,7 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { useRestaurantStore } from '@/store/restaurant';
+import { useTranslation } from '@/i18n';
 
 interface HeaderProps {
   breadcrumbs?: { title: string; href?: string }[];
@@ -29,6 +30,7 @@ interface HeaderProps {
 export function Header({ breadcrumbs }: HeaderProps) {
   const { setTheme } = useTheme();
   const { restaurants, selectedRestaurant, setSelectedRestaurant } = useRestaurantStore();
+  const { t, language, setLanguage } = useTranslation();
 
   const hasMultipleRestaurants = restaurants.length > 1;
 
@@ -63,7 +65,7 @@ export function Header({ breadcrumbs }: HeaderProps) {
               <Button variant="outline" size="sm" className="gap-2">
                 <Store className="h-4 w-4" />
                 <span className="max-w-[150px] truncate">
-                  {selectedRestaurant?.name || 'Выберите ресторан'}
+                  {selectedRestaurant?.name || t.restaurants.selectRestaurant}
                 </span>
                 <ChevronDown className="h-4 w-4 opacity-50" />
               </Button>
@@ -88,20 +90,45 @@ export function Header({ breadcrumbs }: HeaderProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
+              <Globe className="h-4 w-4" />
+              <span className="sr-only">{t.language.select}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => setLanguage('ru')}
+              className="flex items-center justify-between"
+            >
+              {t.language.russian}
+              {language === 'ru' && <Check className="h-4 w-4 text-primary" />}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setLanguage('en')}
+              className="flex items-center justify-between"
+            >
+              {t.language.english}
+              {language === 'en' && <Check className="h-4 w-4 text-primary" />}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
               <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Переключить тему</span>
+              <span className="sr-only">{t.theme.toggle}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setTheme('light')}>
-              Светлая
+              {t.theme.light}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setTheme('dark')}>
-              Тёмная
+              {t.theme.dark}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setTheme('system')}>
-              Системная
+              {t.theme.system}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

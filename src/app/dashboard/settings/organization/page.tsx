@@ -21,17 +21,19 @@ import {
 } from '@/components/ui/form';
 import { organizationApi } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
-
-const organizationSchema = z.object({
-  name: z.string().min(1, 'Введите название организации'),
-  phone: z.string().min(1, 'Введите телефон'),
-});
-
-type OrganizationFormValues = z.infer<typeof organizationSchema>;
+import { useTranslation } from '@/i18n';
 
 export default function OrganizationSettingsPage() {
   const queryClient = useQueryClient();
   const { organization, setOrganization } = useAuthStore();
+  const { t } = useTranslation();
+
+  const organizationSchema = z.object({
+    name: z.string().min(1, t.errors.required),
+    phone: z.string().min(1, t.errors.required),
+  });
+
+  type OrganizationFormValues = z.infer<typeof organizationSchema>;
 
   const form = useForm<OrganizationFormValues>({
     resolver: zodResolver(organizationSchema),
@@ -56,10 +58,10 @@ export default function OrganizationSettingsPage() {
     onSuccess: (response) => {
       setOrganization(response.data);
       queryClient.invalidateQueries({ queryKey: ['organization'] });
-      toast.success('Настройки организации обновлены');
+      toast.success(t.settingsSection.organizationUpdated);
     },
     onError: () => {
-      toast.error('Ошибка обновления настроек');
+      toast.error(t.settingsSection.updateError);
     },
   });
 
@@ -71,25 +73,25 @@ export default function OrganizationSettingsPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Настройки' },
-          { title: 'Организация' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.settings },
+          { title: t.nav.organization },
         ]}
       />
       <main className="flex-1 space-y-6 p-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Настройки организации</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t.settingsSection.organizationSettings}</h1>
           <p className="text-muted-foreground">
-            Управляйте данными вашей организации
+            {t.settingsSection.organizationSubtitle}
           </p>
         </div>
 
         <div className="max-w-2xl">
           <Card>
             <CardHeader>
-              <CardTitle>Основная информация</CardTitle>
+              <CardTitle>{t.settingsSection.basicInfo}</CardTitle>
               <CardDescription>
-                Данные вашей организации
+                {t.settingsSection.organizationData}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -100,9 +102,9 @@ export default function OrganizationSettingsPage() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Название организации</FormLabel>
+                        <FormLabel>{t.settingsSection.organizationName}</FormLabel>
                         <FormControl>
-                          <Input placeholder="ООО Ресторан" {...field} />
+                          <Input placeholder="Company LLC" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -114,11 +116,11 @@ export default function OrganizationSettingsPage() {
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Контактный телефон</FormLabel>
+                        <FormLabel>{t.settingsSection.contactPhone}</FormLabel>
                         <FormControl>
                           <Input
                             type="tel"
-                            placeholder="+7 (900) 123-45-67"
+                            placeholder="+1 (555) 123-4567"
                             {...field}
                           />
                         </FormControl>
@@ -131,7 +133,7 @@ export default function OrganizationSettingsPage() {
                     {updateMutation.isPending && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Сохранить
+                    {t.common.save}
                   </Button>
                 </form>
               </Form>

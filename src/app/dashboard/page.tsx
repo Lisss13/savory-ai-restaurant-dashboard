@@ -23,6 +23,7 @@ import { useAuthStore } from '@/store/auth';
 import { useRestaurantStore } from '@/store/restaurant';
 import { restaurantApi, reservationApi, chatApi, dishApi, tableApi } from '@/lib/api';
 import type { Restaurant, Reservation, ChatSession, Dish, Table } from '@/types';
+import { useTranslation } from '@/i18n';
 
 interface StatCardProps {
   title: string;
@@ -84,6 +85,7 @@ function StatCard({ title, value, description, icon, trend, loading }: StatCardP
 export default function DashboardPage() {
   const { organization } = useAuthStore();
   const { selectedRestaurant, setSelectedRestaurant, setRestaurants } = useRestaurantStore();
+  const { t } = useTranslation();
 
   const { data: restaurantsData, isLoading: restaurantsLoading } = useQuery({
     queryKey: ['restaurants', organization?.id],
@@ -157,26 +159,26 @@ export default function DashboardPage() {
 
   return (
     <>
-      <Header breadcrumbs={[{ title: 'Дашборд' }]} />
+      <Header breadcrumbs={[{ title: t.nav.dashboard }]} />
       <main className="flex-1 space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Дашборд</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t.dashboard.title}</h1>
             <p className="text-muted-foreground">
-              Добро пожаловать, {organization?.name || 'Пользователь'}
+              {t.dashboard.welcomeBack}, {organization?.name || t.common.user}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" asChild>
               <Link href="/dashboard/qr-codes">
                 <QrCode className="mr-2 h-4 w-4" />
-                QR-код
+                {t.dashboard.qrCode}
               </Link>
             </Button>
             <Button asChild>
               <Link href="/dashboard/menu/dishes/new">
                 <Plus className="mr-2 h-4 w-4" />
-                Добавить блюдо
+                {t.dashboard.addDish}
               </Link>
             </Button>
           </div>
@@ -186,14 +188,14 @@ export default function DashboardPage() {
           <Card className="border-dashed">
             <CardContent className="flex flex-col items-center justify-center py-10">
               <UtensilsCrossed className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Нет ресторанов</h3>
+              <h3 className="text-lg font-semibold mb-2">{t.dashboard.noRestaurants}</h3>
               <p className="text-muted-foreground text-center mb-4">
-                Создайте свой первый ресторан, чтобы начать работу
+                {t.dashboard.createFirstRestaurant}
               </p>
               <Button asChild>
                 <Link href="/dashboard/restaurants/new">
                   <Plus className="mr-2 h-4 w-4" />
-                  Создать ресторан
+                  {t.dashboard.createRestaurant}
                 </Link>
               </Button>
             </CardContent>
@@ -204,31 +206,31 @@ export default function DashboardPage() {
           <>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <StatCard
-                title="Бронирования сегодня"
+                title={t.dashboard.todayReservations}
                 value={todayReservations.length}
-                description="за последние 7 дней"
+                description={t.dashboard.last7Days}
                 icon={<CalendarDays className="h-4 w-4" />}
                 trend={12}
                 loading={isLoading}
               />
               <StatCard
-                title="Активные чаты"
+                title={t.dashboard.activeChats}
                 value={activeChats.length}
-                description="ожидают ответа"
+                description={t.dashboard.awaitingResponse}
                 icon={<MessageSquare className="h-4 w-4" />}
                 loading={isLoading}
               />
               <StatCard
-                title="Столы"
+                title={t.dashboard.tables}
                 value={`${todayReservations.length}/${tables?.length || 0}`}
-                description="забронировано сегодня"
+                description={t.dashboard.bookedToday}
                 icon={<Armchair className="h-4 w-4" />}
                 loading={isLoading}
               />
               <StatCard
-                title="Блюда в меню"
+                title={t.dashboard.menuItems}
                 value={dishes?.length || 0}
-                description="активных позиций"
+                description={t.dashboard.activeItems}
                 icon={<UtensilsCrossed className="h-4 w-4" />}
                 loading={isLoading}
               />
@@ -238,14 +240,14 @@ export default function DashboardPage() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
-                    <CardTitle>Последние бронирования</CardTitle>
+                    <CardTitle>{t.dashboard.recentReservations}</CardTitle>
                     <CardDescription>
-                      5 последних бронирований
+                      {t.dashboard.last5Reservations}
                     </CardDescription>
                   </div>
                   <Button variant="ghost" size="sm" asChild>
                     <Link href="/dashboard/reservations/list">
-                      Все
+                      {t.common.all}
                       <ArrowRight className="ml-1 h-4 w-4" />
                     </Link>
                   </Button>
@@ -266,7 +268,7 @@ export default function DashboardPage() {
                     </div>
                   ) : recentReservations.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
-                      Нет бронирований
+                      {t.dashboard.noReservations}
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -283,7 +285,7 @@ export default function DashboardPage() {
                               {reservation.customer_name}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {reservation.reservation_date} в {reservation.start_time} • {reservation.guest_count} гостей
+                              {reservation.reservation_date} {reservation.start_time} • {reservation.guest_count} {t.common.guests}
                             </p>
                           </div>
                           <Badge
@@ -297,10 +299,10 @@ export default function DashboardPage() {
                                 : 'outline'
                             }
                           >
-                            {reservation.status === 'confirmed' && 'Подтверждено'}
-                            {reservation.status === 'pending' && 'Ожидает'}
-                            {reservation.status === 'cancelled' && 'Отменено'}
-                            {reservation.status === 'completed' && 'Завершено'}
+                            {reservation.status === 'confirmed' && t.reservations.confirmed}
+                            {reservation.status === 'pending' && t.reservations.pending}
+                            {reservation.status === 'cancelled' && t.reservations.cancelled}
+                            {reservation.status === 'completed' && t.reservations.completed}
                           </Badge>
                         </div>
                       ))}
@@ -312,14 +314,14 @@ export default function DashboardPage() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
-                    <CardTitle>Активные чаты</CardTitle>
+                    <CardTitle>{t.dashboard.activeChats}</CardTitle>
                     <CardDescription>
-                      Последние сообщения от посетителей
+                      {t.dashboard.lastMessages}
                     </CardDescription>
                   </div>
                   <Button variant="ghost" size="sm" asChild>
                     <Link href="/dashboard/chats/active">
-                      Все
+                      {t.common.all}
                       <ArrowRight className="ml-1 h-4 w-4" />
                     </Link>
                   </Button>
@@ -339,7 +341,7 @@ export default function DashboardPage() {
                     </div>
                   ) : activeChats.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
-                      Нет активных чатов
+                      {t.dashboard.noActiveChats}
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -354,10 +356,10 @@ export default function DashboardPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium truncate">
-                              {session.table?.name || 'Чат ресторана'}
+                              {session.table?.name || t.dashboard.restaurantChat}
                             </p>
                             <p className="text-sm text-muted-foreground truncate">
-                              {session.messages?.[session.messages.length - 1]?.content || 'Нет сообщений'}
+                              {session.messages?.[session.messages.length - 1]?.content || t.dashboard.noMessages}
                             </p>
                           </div>
                           {session.unreadCount && session.unreadCount > 0 && (

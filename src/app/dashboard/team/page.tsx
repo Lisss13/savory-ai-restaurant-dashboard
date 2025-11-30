@@ -54,6 +54,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { organizationApi, userApi } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 import type { UserInOrg } from '@/types';
+import { useTranslation } from '@/i18n';
 
 interface InviteFormData {
   name: string;
@@ -65,6 +66,7 @@ interface InviteFormData {
 export default function TeamPage() {
   const queryClient = useQueryClient();
   const { organization, user } = useAuthStore();
+  const { t } = useTranslation();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
   const [formData, setFormData] = useState<InviteFormData>({
@@ -95,12 +97,12 @@ export default function TeamPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization'] });
-      toast.success('Сотрудник добавлен');
+      toast.success(t.teamSection.memberAdded);
       setIsInviteOpen(false);
       setFormData({ name: '', email: '', password: '', role: 'staff' });
     },
     onError: () => {
-      toast.error('Ошибка при добавлении сотрудника');
+      toast.error(t.teamSection.memberAddError);
     },
   });
 
@@ -108,11 +110,11 @@ export default function TeamPage() {
     mutationFn: (userId: number) => organizationApi.removeUser(organization!.id, userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization'] });
-      toast.success('Сотрудник удалён');
+      toast.success(t.teamSection.memberDeleted);
       setDeleteUserId(null);
     },
     onError: () => {
-      toast.error('Ошибка при удалении сотрудника');
+      toast.error(t.teamSection.memberDeleteError);
     },
   });
 
@@ -138,29 +140,29 @@ export default function TeamPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Команда' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.team },
         ]}
       />
       <main className="flex-1 space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Команда</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t.teamSection.title}</h1>
             <p className="text-muted-foreground">
-              Управляйте сотрудниками вашей организации
+              {t.teamSection.subtitle}
             </p>
           </div>
           <Button onClick={() => setIsInviteOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Пригласить сотрудника
+            {t.teamSection.inviteMember}
           </Button>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Сотрудники</CardTitle>
+            <CardTitle>{t.teamSection.employees}</CardTitle>
             <CardDescription>
-              Всего сотрудников: {allUsers.length}
+              {t.teamSection.totalEmployees}: {allUsers.length}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -174,10 +176,10 @@ export default function TeamPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Сотрудник</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Телефон</TableHead>
-                    <TableHead>Роль</TableHead>
+                    <TableHead>{t.teamSection.employee}</TableHead>
+                    <TableHead>{t.auth.email}</TableHead>
+                    <TableHead>{t.auth.phone}</TableHead>
+                    <TableHead>{t.teamSection.role}</TableHead>
                     <TableHead className="w-16"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -192,7 +194,7 @@ export default function TeamPage() {
                           <div>
                             <p className="font-medium">{member.name}</p>
                             {member.id === user?.id && (
-                              <p className="text-xs text-muted-foreground">Это вы</p>
+                              <p className="text-xs text-muted-foreground">{t.teamSection.thisIsYou}</p>
                             )}
                           </div>
                         </div>
@@ -209,7 +211,7 @@ export default function TeamPage() {
                       <TableCell>{member.phone || '—'}</TableCell>
                       <TableCell>
                         <Badge variant={member.isAdmin ? 'default' : 'secondary'}>
-                          {member.isAdmin ? 'Администратор' : 'Сотрудник'}
+                          {member.isAdmin ? t.teamSection.admin : t.teamSection.staff}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -223,14 +225,14 @@ export default function TeamPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem>
                                 <UserCog className="mr-2 h-4 w-4" />
-                                Изменить роль
+                                {t.teamSection.changeRole}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 className="text-destructive"
                                 onClick={() => setDeleteUserId(member.id)}
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Удалить
+                                {t.common.delete}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -248,24 +250,24 @@ export default function TeamPage() {
       <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Пригласить сотрудника</DialogTitle>
+            <DialogTitle>{t.teamSection.inviteMember}</DialogTitle>
             <DialogDescription>
-              Создайте аккаунт для нового сотрудника
+              {t.teamSection.createAccountFor}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Имя *</Label>
+              <Label>{t.auth.name} *</Label>
               <Input
                 value={formData.name}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, name: e.target.value }))
                 }
-                placeholder="Иван Иванов"
+                placeholder="John Doe"
               />
             </div>
             <div className="space-y-2">
-              <Label>Email *</Label>
+              <Label>{t.auth.email} *</Label>
               <Input
                 type="email"
                 value={formData.email}
@@ -276,18 +278,18 @@ export default function TeamPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Пароль *</Label>
+              <Label>{t.auth.password} *</Label>
               <Input
                 type="password"
                 value={formData.password}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, password: e.target.value }))
                 }
-                placeholder="Минимум 8 символов"
+                placeholder={t.teamSection.minChars}
               />
             </div>
             <div className="space-y-2">
-              <Label>Роль</Label>
+              <Label>{t.teamSection.role}</Label>
               <Select
                 value={formData.role}
                 onValueChange={(value: 'manager' | 'staff') =>
@@ -298,15 +300,15 @@ export default function TeamPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="manager">Менеджер</SelectItem>
-                  <SelectItem value="staff">Сотрудник</SelectItem>
+                  <SelectItem value="manager">{t.teamSection.manager}</SelectItem>
+                  <SelectItem value="staff">{t.teamSection.staff}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsInviteOpen(false)}>
-              Отмена
+              {t.common.cancel}
             </Button>
             <Button
               onClick={() => createUserMutation.mutate(formData)}
@@ -320,7 +322,7 @@ export default function TeamPage() {
               {createUserMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Пригласить
+              {t.teamSection.invite}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -329,18 +331,18 @@ export default function TeamPage() {
       <AlertDialog open={!!deleteUserId} onOpenChange={() => setDeleteUserId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Удалить сотрудника?</AlertDialogTitle>
+            <AlertDialogTitle>{t.teamSection.deleteConfirm}</AlertDialogTitle>
             <AlertDialogDescription>
-              Сотрудник будет удалён из организации. Это действие нельзя отменить.
+              {t.teamSection.deleteWarning}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteUserId && removeUserMutation.mutate(deleteUserId)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Удалить
+              {t.common.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

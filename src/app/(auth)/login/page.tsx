@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { UtensilsCrossed, Loader2 } from 'lucide-react';
+import { UtensilsCrossed, Loader2, Globe, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -27,20 +27,28 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useAuthStore } from '@/store/auth';
-
-const loginSchema = z.object({
-  email: z.string().email('Введите корректный email'),
-  password: z.string().min(8, 'Пароль должен содержать минимум 8 символов'),
-  remember: z.boolean(),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
+import { useTranslation } from '@/i18n';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuthStore();
+  const { t, language, setLanguage } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
+
+  const loginSchema = z.object({
+    email: z.string().email(t.auth.invalidEmail),
+    password: z.string().min(8, t.auth.passwordMinLength),
+    remember: z.boolean(),
+  });
+
+  type LoginFormValues = z.infer<typeof loginSchema>;
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -55,11 +63,11 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await login(data.email, data.password);
-      toast.success('Вход выполнен успешно');
+      toast.success(t.auth.loginSuccess);
       router.push('/dashboard');
     } catch (error: unknown) {
       const err = error as { response?: { data?: { messages?: string[] } } };
-      toast.error(err.response?.data?.messages?.[0] || 'Ошибка входа');
+      toast.error(err.response?.data?.messages?.[0] || t.auth.loginError);
     } finally {
       setIsLoading(false);
     }
@@ -68,14 +76,38 @@ export default function LoginPage() {
   return (
     <Card>
       <CardHeader className="space-y-1 text-center">
-        <div className="flex justify-center mb-4">
+        <div className="flex justify-between items-start mb-4">
+          <div />
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <UtensilsCrossed className="h-6 w-6" />
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Globe className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => setLanguage('ru')}
+                className="flex items-center justify-between"
+              >
+                {t.language.russian}
+                {language === 'ru' && <Check className="h-4 w-4 text-primary" />}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setLanguage('en')}
+                className="flex items-center justify-between"
+              >
+                {t.language.english}
+                {language === 'en' && <Check className="h-4 w-4 text-primary" />}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <CardTitle className="text-2xl">Добро пожаловать</CardTitle>
+        <CardTitle className="text-2xl">{t.auth.welcome}</CardTitle>
         <CardDescription>
-          Войдите в свой аккаунт Savory AI
+          {t.auth.loginToAccount}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -86,7 +118,7 @@ export default function LoginPage() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t.auth.email}</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
@@ -104,12 +136,12 @@ export default function LoginPage() {
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center justify-between">
-                    <FormLabel>Пароль</FormLabel>
+                    <FormLabel>{t.auth.password}</FormLabel>
                     <Link
                       href="/forgot-password"
                       className="text-sm text-muted-foreground hover:text-primary"
                     >
-                      Забыли пароль?
+                      {t.auth.forgotPassword}
                     </Link>
                   </div>
                   <FormControl>
@@ -131,23 +163,23 @@ export default function LoginPage() {
                     />
                   </FormControl>
                   <FormLabel className="text-sm font-normal">
-                    Запомнить меня
+                    {t.auth.rememberMe}
                   </FormLabel>
                 </FormItem>
               )}
             />
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Войти
+              {t.auth.login}
             </Button>
           </form>
         </Form>
       </CardContent>
       <CardFooter className="flex flex-col space-y-4">
         <div className="text-sm text-muted-foreground text-center">
-          Нет аккаунта?{' '}
+          {t.auth.noAccount}{' '}
           <Link href="/register" className="text-primary hover:underline">
-            Зарегистрироваться
+            {t.auth.register}
           </Link>
         </div>
       </CardFooter>

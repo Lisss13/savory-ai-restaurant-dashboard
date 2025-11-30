@@ -42,12 +42,14 @@ import {getImageUrl, restaurantApi} from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 import { useRestaurantStore } from '@/store/restaurant';
 import type { Restaurant } from '@/types';
+import { useTranslation } from '@/i18n';
 
 export default function RestaurantsPage() {
   const queryClient = useQueryClient();
   const { organization } = useAuthStore();
   const { selectedRestaurant, setSelectedRestaurant } = useRestaurantStore();
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const { t } = useTranslation();
 
   const { data: restaurants, isLoading } = useQuery({
     queryKey: ['restaurants', organization?.id],
@@ -63,11 +65,11 @@ export default function RestaurantsPage() {
     mutationFn: restaurantApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['restaurants', organization?.id] });
-      toast.success('Ресторан удалён');
+      toast.success(t.restaurants.deleted);
       setDeleteId(null);
     },
     onError: () => {
-      toast.error('Ошибка при удалении ресторана');
+      toast.error(t.restaurants.deleteError);
     },
   });
 
@@ -87,24 +89,24 @@ export default function RestaurantsPage() {
 
   const handleSelect = (restaurant: Restaurant) => {
     setSelectedRestaurant(restaurant);
-    toast.success(`Выбран ресторан: ${restaurant.name}`);
+    toast.success(`${t.restaurants.selectedRestaurant}: ${restaurant.name}`);
   };
 
   return (
     <>
-      <Header breadcrumbs={[{ title: 'Дашборд', href: '/dashboard' }, { title: 'Рестораны' }]} />
+      <Header breadcrumbs={[{ title: t.nav.dashboard, href: '/dashboard' }, { title: t.nav.restaurants }]} />
       <main className="flex-1 space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Рестораны</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t.restaurants.title}</h1>
             <p className="text-muted-foreground">
-              Управляйте вашими заведениями
+              {t.restaurants.manageRestaurants}
             </p>
           </div>
           <Button asChild>
             <Link href="/dashboard/restaurants/new">
               <Plus className="mr-2 h-4 w-4" />
-              Добавить ресторан
+              {t.restaurants.addRestaurant}
             </Link>
           </Button>
         </div>
@@ -130,14 +132,14 @@ export default function RestaurantsPage() {
         ) : restaurants?.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="flex flex-col items-center justify-center py-10">
-              <h3 className="text-lg font-semibold mb-2">Нет ресторанов</h3>
+              <h3 className="text-lg font-semibold mb-2">{t.restaurants.noRestaurants}</h3>
               <p className="text-muted-foreground text-center mb-4">
-                Создайте свой первый ресторан
+                {t.restaurants.createFirst}
               </p>
               <Button asChild>
                 <Link href="/dashboard/restaurants/new">
                   <Plus className="mr-2 h-4 w-4" />
-                  Создать ресторан
+                  {t.dashboard.createRestaurant}
                 </Link>
               </Button>
             </CardContent>
@@ -163,7 +165,7 @@ export default function RestaurantsPage() {
                     <CardTitle className="flex items-center gap-2">
                       {restaurant.name}
                       <Badge variant={isOpen(restaurant) ? 'default' : 'secondary'}>
-                        {isOpen(restaurant) ? 'Открыто' : 'Закрыто'}
+                        {isOpen(restaurant) ? t.restaurants.open : t.restaurants.closed}
                       </Badge>
                     </CardTitle>
                     <CardDescription>{restaurant.description}</CardDescription>
@@ -177,30 +179,30 @@ export default function RestaurantsPage() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => handleSelect(restaurant)}>
                         <Check className="mr-2 h-4 w-4" />
-                        Выбрать
+                        {t.restaurants.select}
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link href={`/dashboard/restaurants/${restaurant.id}`}>
                           <Eye className="mr-2 h-4 w-4" />
-                          Просмотр
+                          {t.restaurants.view}
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link href={`/dashboard/restaurants/${restaurant.id}/edit`}>
                           <Pencil className="mr-2 h-4 w-4" />
-                          Редактировать
+                          {t.restaurants.edit}
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link href={`/dashboard/restaurants/${restaurant.id}/settings`}>
                           <Settings className="mr-2 h-4 w-4" />
-                          Настройки
+                          {t.common.settings}
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link href={`/dashboard/qr-codes?restaurant=${restaurant.id}`}>
                           <QrCode className="mr-2 h-4 w-4" />
-                          QR-код
+                          {t.dashboard.qrCode}
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem
@@ -208,7 +210,7 @@ export default function RestaurantsPage() {
                         onClick={() => setDeleteId(restaurant.id)}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Удалить
+                        {t.restaurants.delete}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -252,8 +254,8 @@ export default function RestaurantsPage() {
                     onClick={() => handleSelect(restaurant)}
                   >
                     {selectedRestaurant?.id === restaurant.id
-                      ? 'Выбран'
-                      : 'Выбрать'}
+                      ? t.restaurants.selected
+                      : t.restaurants.select}
                   </Button>
                 </CardContent>
               </Card>
@@ -265,18 +267,18 @@ export default function RestaurantsPage() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Удалить ресторан?</AlertDialogTitle>
+            <AlertDialogTitle>{t.restaurants.deleteConfirm}</AlertDialogTitle>
             <AlertDialogDescription>
-              Это действие нельзя отменить. Все данные ресторана будут удалены.
+              {t.restaurants.deleteWarning}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && deleteMutation.mutate(deleteId)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Удалить
+              {t.common.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

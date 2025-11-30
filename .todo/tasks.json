@@ -357,5 +357,49 @@
       }
     },
     "isImported": false
+  },
+  {
+    "id": "TASK_211",
+    "priority": "LOW",
+    "tags": [],
+    "title": "не подставилась категория на странице блюда ",
+    "description": "",
+    "status": "TODO",
+    "date": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 30
+      },
+      "time": {
+        "hour": 16,
+        "minute": 36,
+        "second": 40,
+        "nano": 430456000
+      }
+    },
+    "isImported": false
+  },
+  {
+    "id": "TASK_224",
+    "priority": "LOW",
+    "tags": [],
+    "title": "вместо кнопки селек переход на выбор ресторана ",
+    "description": "",
+    "status": "TODO",
+    "date": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 30
+      },
+      "time": {
+        "hour": 16,
+        "minute": 43,
+        "second": 31,
+        "nano": 573355000
+      }
+    },
+    "isImported": false
   }
 ]

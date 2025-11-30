@@ -30,10 +30,12 @@ import {
 import { languageApi, organizationApi } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 import type { Language } from '@/types';
+import { useTranslation } from '@/i18n';
 
 export default function LanguagesSettingsPage() {
   const queryClient = useQueryClient();
   const { organization } = useAuthStore();
+  const { t } = useTranslation();
   const [deleteLanguageId, setDeleteLanguageId] = useState<number | null>(null);
 
   const { data: allLanguages, isLoading: isAllLoading } = useQuery({
@@ -63,10 +65,10 @@ export default function LanguagesSettingsPage() {
       organizationApi.addLanguage(organization!.id, languageId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization', organization?.id, 'languages'] });
-      toast.success('Язык добавлен');
+      toast.success(t.settingsSection.languageAdded);
     },
     onError: () => {
-      toast.error('Ошибка добавления языка');
+      toast.error(t.settingsSection.languageAddError);
     },
   });
 
@@ -75,11 +77,11 @@ export default function LanguagesSettingsPage() {
       organizationApi.removeLanguage(organization!.id, languageId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization', organization?.id, 'languages'] });
-      toast.success('Язык удалён');
+      toast.success(t.settingsSection.languageRemoved);
       setDeleteLanguageId(null);
     },
     onError: () => {
-      toast.error('Ошибка удаления языка');
+      toast.error(t.settingsSection.languageRemoveError);
     },
   });
 
@@ -87,24 +89,24 @@ export default function LanguagesSettingsPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Настройки' },
-          { title: 'Языки' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.settings },
+          { title: t.nav.languages },
         ]}
       />
       <main className="flex-1 space-y-6 p-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Языки</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t.settingsSection.languages}</h1>
           <p className="text-muted-foreground">
-            Управляйте языками вашей организации
+            {t.settingsSection.languagesSubtitle}
           </p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Доступные языки</CardTitle>
+            <CardTitle>{t.settingsSection.availableLanguages}</CardTitle>
             <CardDescription>
-              Выберите языки, на которых будет доступен ваш контент
+              {t.settingsSection.selectLanguages}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -118,9 +120,9 @@ export default function LanguagesSettingsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Язык</TableHead>
-                    <TableHead>Код</TableHead>
-                    <TableHead>Статус</TableHead>
+                    <TableHead>{t.language.select}</TableHead>
+                    <TableHead>{t.settingsSection.languageCode}</TableHead>
+                    <TableHead>{t.settingsSection.languageStatus}</TableHead>
                     <TableHead className="w-[100px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -139,10 +141,10 @@ export default function LanguagesSettingsPage() {
                           {isEnabled ? (
                             <Badge variant="default">
                               <Check className="mr-1 h-3 w-3" />
-                              Включён
+                              {t.settingsSection.enabled}
                             </Badge>
                           ) : (
-                            <Badge variant="secondary">Выключен</Badge>
+                            <Badge variant="secondary">{t.settingsSection.disabled}</Badge>
                           )}
                         </TableCell>
                         <TableCell>
@@ -182,18 +184,18 @@ export default function LanguagesSettingsPage() {
       <AlertDialog open={!!deleteLanguageId} onOpenChange={() => setDeleteLanguageId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Удалить язык?</AlertDialogTitle>
+            <AlertDialogTitle>{t.settingsSection.removeLanguage}</AlertDialogTitle>
             <AlertDialogDescription>
-              Контент на этом языке станет недоступен для гостей.
+              {t.settingsSection.removeLanguageWarning}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteLanguageId && removeLanguageMutation.mutate(deleteLanguageId)}
               className="bg-destructive text-destructive-foreground"
             >
-              Удалить
+              {t.common.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

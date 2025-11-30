@@ -2,7 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { format, differenceInDays } from 'date-fns';
-import { ru } from 'date-fns/locale';
+import { ru as ruLocale } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { CreditCard, Calendar, Clock, CheckCircle } from 'lucide-react';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
@@ -12,9 +13,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { subscriptionApi } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
+import { useTranslation } from '@/i18n';
 
 export default function SubscriptionPage() {
   const { organization } = useAuthStore();
+  const { t, language } = useTranslation();
+
+  const dateLocale = language === 'ru' ? ruLocale : enUS;
 
   const { data: subscription, isLoading } = useQuery({
     queryKey: ['subscription', organization?.id],
@@ -38,16 +43,16 @@ export default function SubscriptionPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Настройки' },
-          { title: 'Подписка' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.settings },
+          { title: t.nav.subscription },
         ]}
       />
       <main className="flex-1 space-y-6 p-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Подписка</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t.settingsSection.subscription}</h1>
           <p className="text-muted-foreground">
-            Информация о вашей подписке
+            {t.settingsSection.subscriptionSubtitle}
           </p>
         </div>
 
@@ -56,9 +61,9 @@ export default function SubscriptionPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Текущий план</CardTitle>
+                  <CardTitle>{t.settingsSection.currentPlan}</CardTitle>
                   <CardDescription>
-                    Информация о подписке
+                    {t.settingsSection.subscriptionInfo}
                   </CardDescription>
                 </div>
                 {isLoading ? (
@@ -66,10 +71,10 @@ export default function SubscriptionPage() {
                 ) : subscription?.isActive ? (
                   <Badge variant="default" className="flex items-center gap-1">
                     <CheckCircle className="h-3 w-3" />
-                    Активна
+                    {t.settingsSection.active}
                   </Badge>
                 ) : (
-                  <Badge variant="destructive">Неактивна</Badge>
+                  <Badge variant="destructive">{t.settingsSection.inactive}</Badge>
                 )}
               </div>
             </CardHeader>
@@ -86,34 +91,34 @@ export default function SubscriptionPage() {
                     <div className="flex items-center gap-3">
                       <CreditCard className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <p className="text-sm text-muted-foreground">План</p>
+                        <p className="text-sm text-muted-foreground">{t.settingsSection.plan}</p>
                         <p className="font-medium">
-                          {subscription.period === 12 ? 'Годовой' : `${subscription.period} мес.`}
+                          {subscription.period === 12 ? t.settingsSection.yearly : `${subscription.period} ${t.settingsSection.monthly}`}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <Calendar className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Начало</p>
+                        <p className="text-sm text-muted-foreground">{t.settingsSection.startDate}</p>
                         <p className="font-medium">
-                          {format(new Date(subscription.startDate), 'd MMMM yyyy', { locale: ru })}
+                          {format(new Date(subscription.startDate), 'd MMMM yyyy', { locale: dateLocale })}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <Calendar className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Окончание</p>
+                        <p className="text-sm text-muted-foreground">{t.settingsSection.endDate}</p>
                         <p className="font-medium">
-                          {format(new Date(subscription.endDate), 'd MMMM yyyy', { locale: ru })}
+                          {format(new Date(subscription.endDate), 'd MMMM yyyy', { locale: dateLocale })}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <Clock className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Осталось дней</p>
+                        <p className="text-sm text-muted-foreground">{t.settingsSection.daysRemaining}</p>
                         <p className="font-medium">{daysRemaining > 0 ? daysRemaining : 0}</p>
                       </div>
                     </div>
@@ -121,7 +126,7 @@ export default function SubscriptionPage() {
 
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Прогресс подписки</span>
+                      <span className="text-muted-foreground">{t.settingsSection.subscriptionProgress}</span>
                       <span className="font-medium">{Math.round(progress)}%</span>
                     </div>
                     <Progress value={progress} />
@@ -129,7 +134,7 @@ export default function SubscriptionPage() {
                 </>
               ) : (
                 <div className="text-center py-6 text-muted-foreground">
-                  <p>У вас нет активной подписки</p>
+                  <p>{t.settingsSection.noActiveSubscription}</p>
                 </div>
               )}
             </CardContent>
@@ -137,17 +142,17 @@ export default function SubscriptionPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Управление подпиской</CardTitle>
+              <CardTitle>{t.settingsSection.manageSubscription}</CardTitle>
               <CardDescription>
-                Продлите или измените вашу подписку
+                {t.settingsSection.manageSubscriptionDesc}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Button className="w-full" size="lg">
-                Продлить подписку
+                {t.settingsSection.extendSubscription}
               </Button>
               <p className="text-xs text-center text-muted-foreground">
-                Для изменения плана или вопросов по оплате свяжитесь с поддержкой
+                {t.settingsSection.contactSupportForPlan}
               </p>
             </CardContent>
           </Card>

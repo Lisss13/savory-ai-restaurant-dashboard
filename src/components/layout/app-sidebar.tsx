@@ -48,113 +48,115 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-
-const mainNavItems = [
-  {
-    title: 'Дашборд',
-    url: '/dashboard',
-    icon: LayoutDashboard,
-  },
-  {
-    title: 'Рестораны',
-    url: '/dashboard/restaurants',
-    icon: Store,
-  },
-];
-
-const restaurantNavItems = [
-  {
-    title: 'Меню',
-    icon: UtensilsCrossed,
-    items: [
-      { title: 'Категории', url: '/dashboard/menu/categories' },
-      { title: 'Блюда', url: '/dashboard/menu/dishes' },
-    ],
-  },
-  {
-    title: 'Столы',
-    url: '/dashboard/tables',
-    icon: Armchair,
-  },
-  {
-    title: 'Бронирования',
-    icon: CalendarDays,
-    items: [
-      { title: 'Календарь', url: '/dashboard/reservations/calendar' },
-      { title: 'Список', url: '/dashboard/reservations/list' },
-    ],
-  },
-  {
-    title: 'Чаты',
-    icon: MessageSquare,
-    items: [
-      { title: 'Активные', url: '/dashboard/chats/active' },
-      { title: 'История', url: '/dashboard/chats/history' },
-    ],
-  },
-  {
-    title: 'Быстрые вопросы',
-    url: '/dashboard/questions',
-    icon: HelpCircle,
-  },
-  {
-    title: 'QR-коды',
-    url: '/dashboard/qr-codes',
-    icon: QrCode,
-  },
-  {
-    title: 'Аналитика',
-    icon: BarChart3,
-    items: [
-      { title: 'Обзор', url: '/dashboard/analytics/overview' },
-      { title: 'Бронирования', url: '/dashboard/analytics/reservations' },
-      { title: 'Чаты', url: '/dashboard/analytics/chats' },
-    ],
-  },
-];
-
-const settingsNavItems = [
-  {
-    title: 'Команда',
-    url: '/dashboard/team',
-    icon: Users,
-  },
-  {
-    title: 'Настройки',
-    icon: Settings,
-    items: [
-      { title: 'Профиль', url: '/dashboard/settings/profile' },
-      { title: 'Организация', url: '/dashboard/settings/organization' },
-      { title: 'Языки', url: '/dashboard/settings/languages' },
-      { title: 'Подписка', url: '/dashboard/settings/subscription' },
-    ],
-  },
-  {
-    title: 'Поддержка',
-    url: '/dashboard/settings/support',
-    icon: LifeBuoy,
-  },
-];
-
-const adminNavItems = [
-  {
-    title: 'Админ-панель',
-    icon: Shield,
-    items: [
-      { title: 'Статистика', url: '/dashboard/admin' },
-      { title: 'Пользователи', url: '/dashboard/admin/users' },
-      { title: 'Организации', url: '/dashboard/admin/organizations' },
-      { title: 'Модерация', url: '/dashboard/admin/moderation' },
-      { title: 'Логи', url: '/dashboard/admin/logs' },
-    ],
-  },
-];
+import { useTranslation } from '@/i18n';
 
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAdmin, logout } = useAuthStore();
   const { selectedRestaurant } = useRestaurantStore();
+  const { t } = useTranslation();
+
+  const mainNavItems = [
+    {
+      title: t.nav.dashboard,
+      url: '/dashboard',
+      icon: LayoutDashboard,
+    },
+    {
+      title: t.nav.restaurants,
+      url: '/dashboard/restaurants',
+      icon: Store,
+    },
+  ];
+
+  const restaurantNavItems = [
+    {
+      title: t.nav.menu,
+      icon: UtensilsCrossed,
+      items: [
+        { title: t.nav.categories, url: '/dashboard/menu/categories' },
+        { title: t.nav.dishes, url: '/dashboard/menu/dishes' },
+      ],
+    },
+    {
+      title: t.nav.tables,
+      url: '/dashboard/tables',
+      icon: Armchair,
+    },
+    {
+      title: t.nav.reservations,
+      icon: CalendarDays,
+      items: [
+        { title: t.nav.calendar, url: '/dashboard/reservations/calendar' },
+        { title: t.nav.list, url: '/dashboard/reservations/list' },
+      ],
+    },
+    {
+      title: t.nav.chats,
+      icon: MessageSquare,
+      items: [
+        { title: t.nav.active, url: '/dashboard/chats/active' },
+        { title: t.nav.history, url: '/dashboard/chats/history' },
+      ],
+    },
+    {
+      title: t.nav.questions,
+      url: '/dashboard/questions',
+      icon: HelpCircle,
+    },
+    {
+      title: t.nav.qrCodes,
+      url: '/dashboard/qr-codes',
+      icon: QrCode,
+    },
+    {
+      title: t.nav.analytics,
+      icon: BarChart3,
+      items: [
+        { title: t.nav.overview, url: '/dashboard/analytics/overview' },
+        { title: t.nav.reservations, url: '/dashboard/analytics/reservations' },
+        { title: t.nav.chats, url: '/dashboard/analytics/chats' },
+      ],
+    },
+  ];
+
+  const settingsNavItems = [
+    {
+      title: t.nav.team,
+      url: '/dashboard/team',
+      icon: Users,
+    },
+    {
+      title: t.nav.settings,
+      icon: Settings,
+      items: [
+        { title: t.nav.profile, url: '/dashboard/settings/profile' },
+        { title: t.nav.organization, url: '/dashboard/settings/organization' },
+        { title: t.nav.languages, url: '/dashboard/settings/languages' },
+        { title: t.nav.subscription, url: '/dashboard/settings/subscription' },
+      ],
+    },
+    {
+      title: t.nav.support,
+      url: '/dashboard/settings/support',
+      icon: LifeBuoy,
+    },
+  ];
+
+  const adminNavItems = [
+    {
+      title: t.nav.adminPanel,
+      icon: Shield,
+      items: [
+        { title: t.nav.statistics, url: '/dashboard/admin' },
+        { title: t.nav.users, url: '/dashboard/admin/users' },
+        { title: t.nav.organizations, url: '/dashboard/admin/organizations' },
+        { title: t.nav.moderation, url: '/dashboard/admin/moderation' },
+        { title: t.nav.logs, url: '/dashboard/admin/logs' },
+      ],
+    },
+  ];
 
   const handleLogout = () => {
     logout();
@@ -183,7 +185,7 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Основное</SidebarGroupLabel>
+          <SidebarGroupLabel>{t.nav.main}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNavItems.map((item) => (
@@ -249,7 +251,7 @@ export function AppSidebar() {
         )}
 
         <SidebarGroup>
-          <SidebarGroupLabel>Управление</SidebarGroupLabel>
+          <SidebarGroupLabel>{t.nav.management}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {settingsNavItems.map((item) =>
@@ -296,7 +298,7 @@ export function AppSidebar() {
 
         {isAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel>Администрирование</SidebarGroupLabel>
+            <SidebarGroupLabel>{t.nav.administration}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminNavItems.map((item) => (
@@ -350,12 +352,12 @@ export function AppSidebar() {
             <DropdownMenuItem asChild>
               <Link href="/dashboard/settings/profile">
                 <Settings className="mr-2 h-4 w-4" />
-                Настройки
+                {t.nav.settings}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout} className="text-destructive">
               <LogOut className="mr-2 h-4 w-4" />
-              Выйти
+              {t.auth.logout}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

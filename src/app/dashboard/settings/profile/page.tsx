@@ -22,28 +22,30 @@ import {
 } from '@/components/ui/form';
 import { userApi, authApi } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
-
-const profileSchema = z.object({
-  name: z.string().min(1, 'Введите имя'),
-  email: z.string().email('Введите корректный email'),
-  phone: z.string().optional(),
-});
-
-const passwordSchema = z.object({
-  oldPassword: z.string().min(8, 'Минимум 8 символов'),
-  newPassword: z.string().min(8, 'Минимум 8 символов'),
-  confirmPassword: z.string(),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: 'Пароли не совпадают',
-  path: ['confirmPassword'],
-});
-
-type ProfileFormValues = z.infer<typeof profileSchema>;
-type PasswordFormValues = z.infer<typeof passwordSchema>;
+import { useTranslation } from '@/i18n';
 
 export default function ProfileSettingsPage() {
   const { user, setUser } = useAuthStore();
+  const { t } = useTranslation();
   const [isPasswordFormVisible, setIsPasswordFormVisible] = useState(false);
+
+  const profileSchema = z.object({
+    name: z.string().min(1, t.settingsSection.enterName),
+    email: z.string().email(t.auth.invalidEmail),
+    phone: z.string().optional(),
+  });
+
+  const passwordSchema = z.object({
+    oldPassword: z.string().min(8, t.auth.passwordMinLength),
+    newPassword: z.string().min(8, t.auth.passwordMinLength),
+    confirmPassword: z.string(),
+  }).refine((data) => data.newPassword === data.confirmPassword, {
+    message: t.settingsSection.passwordsDoNotMatch,
+    path: ['confirmPassword'],
+  });
+
+  type ProfileFormValues = z.infer<typeof profileSchema>;
+  type PasswordFormValues = z.infer<typeof passwordSchema>;
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -67,10 +69,10 @@ export default function ProfileSettingsPage() {
     mutationFn: (data: ProfileFormValues) => userApi.update(user!.id, data),
     onSuccess: (response) => {
       setUser(response.data);
-      toast.success('Профиль обновлён');
+      toast.success(t.settingsSection.profileUpdated);
     },
     onError: () => {
-      toast.error('Ошибка обновления профиля');
+      toast.error(t.settingsSection.profileUpdateError);
     },
   });
 
@@ -78,12 +80,12 @@ export default function ProfileSettingsPage() {
     mutationFn: (data: PasswordFormValues) =>
       authApi.changePassword(data.oldPassword, data.newPassword),
     onSuccess: () => {
-      toast.success('Пароль изменён');
+      toast.success(t.settingsSection.passwordChanged);
       passwordForm.reset();
       setIsPasswordFormVisible(false);
     },
     onError: () => {
-      toast.error('Ошибка смены пароля. Проверьте текущий пароль.');
+      toast.error(t.settingsSection.passwordChangeError);
     },
   });
 
@@ -91,25 +93,25 @@ export default function ProfileSettingsPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Настройки' },
-          { title: 'Профиль' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.settings },
+          { title: t.nav.profile },
         ]}
       />
       <main className="flex-1 space-y-6 p-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Профиль</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t.settingsSection.profile}</h1>
           <p className="text-muted-foreground">
-            Управляйте своими личными данными
+            {t.settingsSection.profileSubtitle}
           </p>
         </div>
 
         <div className="grid gap-6 max-w-2xl">
           <Card>
             <CardHeader>
-              <CardTitle>Личные данные</CardTitle>
+              <CardTitle>{t.settingsSection.personalData}</CardTitle>
               <CardDescription>
-                Обновите информацию о себе
+                {t.settingsSection.updateYourInfo}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -125,7 +127,7 @@ export default function ProfileSettingsPage() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Имя</FormLabel>
+                        <FormLabel>{t.auth.name}</FormLabel>
                         <FormControl>
                           <Input {...field} />
                         </FormControl>
@@ -139,7 +141,7 @@ export default function ProfileSettingsPage() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>{t.auth.email}</FormLabel>
                         <FormControl>
                           <Input type="email" {...field} disabled />
                         </FormControl>
@@ -153,7 +155,7 @@ export default function ProfileSettingsPage() {
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Телефон</FormLabel>
+                        <FormLabel>{t.auth.phone}</FormLabel>
                         <FormControl>
                           <Input type="tel" {...field} />
                         </FormControl>
@@ -169,7 +171,7 @@ export default function ProfileSettingsPage() {
                     {updateProfileMutation.isPending && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Сохранить
+                    {t.common.save}
                   </Button>
                 </form>
               </Form>
@@ -178,9 +180,9 @@ export default function ProfileSettingsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Безопасность</CardTitle>
+              <CardTitle>{t.settingsSection.security}</CardTitle>
               <CardDescription>
-                Измените пароль для входа в систему
+                {t.settingsSection.changePasswordDesc}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -189,7 +191,7 @@ export default function ProfileSettingsPage() {
                   variant="outline"
                   onClick={() => setIsPasswordFormVisible(true)}
                 >
-                  Сменить пароль
+                  {t.settingsSection.changePassword}
                 </Button>
               ) : (
                 <Form {...passwordForm}>
@@ -204,7 +206,7 @@ export default function ProfileSettingsPage() {
                       name="oldPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Текущий пароль</FormLabel>
+                          <FormLabel>{t.settingsSection.currentPassword}</FormLabel>
                           <FormControl>
                             <Input type="password" {...field} />
                           </FormControl>
@@ -220,7 +222,7 @@ export default function ProfileSettingsPage() {
                       name="newPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Новый пароль</FormLabel>
+                          <FormLabel>{t.settingsSection.newPassword}</FormLabel>
                           <FormControl>
                             <Input type="password" {...field} />
                           </FormControl>
@@ -234,7 +236,7 @@ export default function ProfileSettingsPage() {
                       name="confirmPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Подтвердите пароль</FormLabel>
+                          <FormLabel>{t.settingsSection.confirmNewPassword}</FormLabel>
                           <FormControl>
                             <Input type="password" {...field} />
                           </FormControl>
@@ -252,7 +254,7 @@ export default function ProfileSettingsPage() {
                           passwordForm.reset();
                         }}
                       >
-                        Отмена
+                        {t.common.cancel}
                       </Button>
                       <Button
                         type="submit"
@@ -261,7 +263,7 @@ export default function ProfileSettingsPage() {
                         {changePasswordMutation.isPending && (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         )}
-                        Изменить пароль
+                        {t.settingsSection.changePassword}
                       </Button>
                     </div>
                   </form>

@@ -25,16 +25,7 @@ import {
 } from '@/components/ui/form';
 import {getImageUrl, restaurantApi, uploadApi} from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
-
-const DAYS_OF_WEEK = [
-  { value: 0, label: 'Воскресенье' },
-  { value: 1, label: 'Понедельник' },
-  { value: 2, label: 'Вторник' },
-  { value: 3, label: 'Среда' },
-  { value: 4, label: 'Четверг' },
-  { value: 5, label: 'Пятница' },
-  { value: 6, label: 'Суббота' },
-];
+import { useTranslation } from '@/i18n';
 
 const workingHourSchema = z.object({
   day_of_week: z.number(),
@@ -43,32 +34,43 @@ const workingHourSchema = z.object({
   is_closed: z.boolean(),
 });
 
-const restaurantSchema = z.object({
-  name: z.string().min(1, 'Введите название ресторана'),
-  address: z.string().min(1, 'Введите адрес'),
-  phone: z.string().min(1, 'Введите телефон'),
-  website: z.string().url('Введите корректный URL').optional().or(z.literal('')),
-  description: z.string().optional(),
-  image_url: z.string().optional(),
-  working_hours: z.array(workingHourSchema),
-});
-
-type RestaurantFormValues = z.infer<typeof restaurantSchema>;
-
-const defaultWorkingHours = DAYS_OF_WEEK.map((day) => ({
-  day_of_week: day.value,
-  open_time: '09:00',
-  close_time: '22:00',
-  is_closed: day.value === 0,
-}));
-
 export default function EditRestaurantPage() {
   const router = useRouter();
   const params = useParams();
   const queryClient = useQueryClient();
   const { organization } = useAuthStore();
+  const { t } = useTranslation();
   const restaurantId = Number(params.id);
   const [isUploading, setIsUploading] = useState(false);
+
+  const DAYS_OF_WEEK = [
+    { value: 0, label: t.restaurants.sunday },
+    { value: 1, label: t.restaurants.monday },
+    { value: 2, label: t.restaurants.tuesday },
+    { value: 3, label: t.restaurants.wednesday },
+    { value: 4, label: t.restaurants.thursday },
+    { value: 5, label: t.restaurants.friday },
+    { value: 6, label: t.restaurants.saturday },
+  ];
+
+  const defaultWorkingHours = DAYS_OF_WEEK.map((day) => ({
+    day_of_week: day.value,
+    open_time: '09:00',
+    close_time: '22:00',
+    is_closed: day.value === 0,
+  }));
+
+  const restaurantSchema = z.object({
+    name: z.string().min(1, t.restaurants.enterRestaurantName),
+    address: z.string().min(1, t.restaurants.enterAddress),
+    phone: z.string().min(1, t.restaurants.enterPhone),
+    website: z.string().url(t.restaurants.enterValidUrl).optional().or(z.literal('')),
+    description: z.string().optional(),
+    image_url: z.string().optional(),
+    working_hours: z.array(workingHourSchema),
+  });
+
+  type RestaurantFormValues = z.infer<typeof restaurantSchema>;
 
   const { data: restaurant, isLoading } = useQuery({
     queryKey: ['restaurant', restaurantId],
@@ -143,11 +145,11 @@ export default function EditRestaurantPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['restaurants', organization?.id] });
       queryClient.invalidateQueries({ queryKey: ['restaurant', restaurantId] });
-      toast.success('Ресторан обновлён');
+      toast.success(t.restaurants.restaurantUpdated);
       router.push('/dashboard/restaurants');
     },
     onError: () => {
-      toast.error('Ошибка при обновлении ресторана');
+      toast.error(t.restaurants.restaurantUpdateError);
     },
   });
 
@@ -159,9 +161,9 @@ export default function EditRestaurantPage() {
     try {
       const response = await uploadApi.uploadImage(file);
       form.setValue('image_url', response.data.url);
-      toast.success('Изображение загружено');
+      toast.success(t.restaurants.imageUploaded);
     } catch {
-      toast.error('Ошибка загрузки изображения');
+      toast.error(t.restaurants.imageUploadError);
     } finally {
       setIsUploading(false);
     }
@@ -184,7 +186,7 @@ export default function EditRestaurantPage() {
             }
       )
     );
-    toast.success('Расписание скопировано на все дни');
+    toast.success(t.restaurants.copiedToAll);
   };
 
   const onSubmit = (data: RestaurantFormValues) => {
@@ -196,9 +198,9 @@ export default function EditRestaurantPage() {
       <>
         <Header
           breadcrumbs={[
-            { title: 'Дашборд', href: '/dashboard' },
-            { title: 'Рестораны', href: '/dashboard/restaurants' },
-            { title: 'Редактирование' },
+            { title: t.nav.dashboard, href: '/dashboard' },
+            { title: t.nav.restaurants, href: '/dashboard/restaurants' },
+            { title: t.common.edit },
           ]}
         />
         <main className="flex-1 space-y-6 p-6">
@@ -219,16 +221,16 @@ export default function EditRestaurantPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Рестораны', href: '/dashboard/restaurants' },
-          { title: restaurant?.name || 'Редактирование' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.restaurants, href: '/dashboard/restaurants' },
+          { title: restaurant?.name || t.common.edit },
         ]}
       />
       <main className="flex-1 space-y-6 p-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Редактирование ресторана</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t.restaurants.editRestaurant}</h1>
           <p className="text-muted-foreground">
-            Измените информацию о вашем заведении
+            {t.restaurants.editSubtitle}
           </p>
         </div>
 
@@ -237,9 +239,9 @@ export default function EditRestaurantPage() {
             <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Основная информация</CardTitle>
+                  <CardTitle>{t.restaurants.basicInfo}</CardTitle>
                   <CardDescription>
-                    Базовые данные о ресторане
+                    {t.restaurants.basicInfoDesc}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -248,9 +250,9 @@ export default function EditRestaurantPage() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Название ресторана *</FormLabel>
+                        <FormLabel>{t.restaurants.restaurantName} *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ресторан Гурман" {...field} />
+                          <Input placeholder={t.restaurants.restaurantNamePlaceholder} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -262,9 +264,9 @@ export default function EditRestaurantPage() {
                     name="address"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Адрес *</FormLabel>
+                        <FormLabel>{t.restaurants.address} *</FormLabel>
                         <FormControl>
-                          <Input placeholder="ул. Пушкина, д. 10" {...field} />
+                          <Input placeholder={t.restaurants.addressPlaceholder} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -276,7 +278,7 @@ export default function EditRestaurantPage() {
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Телефон *</FormLabel>
+                        <FormLabel>{t.restaurants.phone} *</FormLabel>
                         <FormControl>
                           <Input
                             type="tel"
@@ -294,7 +296,7 @@ export default function EditRestaurantPage() {
                     name="website"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Веб-сайт</FormLabel>
+                        <FormLabel>{t.restaurants.website}</FormLabel>
                         <FormControl>
                           <Input
                             type="url"
@@ -312,10 +314,10 @@ export default function EditRestaurantPage() {
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Описание</FormLabel>
+                        <FormLabel>{t.restaurants.description}</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="Расскажите о вашем ресторане..."
+                            placeholder={t.restaurants.descriptionPlaceholder}
                             className="min-h-[100px]"
                             {...field}
                           />
@@ -330,7 +332,7 @@ export default function EditRestaurantPage() {
                     name="image_url"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Фото ресторана</FormLabel>
+                        <FormLabel>{t.restaurants.restaurantPhoto}</FormLabel>
                         <FormControl>
                           <div className="space-y-2">
                             {field.value && (
@@ -372,7 +374,7 @@ export default function EditRestaurantPage() {
                                   ) : (
                                     <Upload className="mr-2 h-4 w-4" />
                                   )}
-                                  Загрузить фото
+                                  {t.restaurants.uploadPhoto}
                                 </label>
                               </Button>
                             </div>
@@ -387,9 +389,9 @@ export default function EditRestaurantPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Расписание работы</CardTitle>
+                  <CardTitle>{t.restaurants.workingHours}</CardTitle>
                   <CardDescription>
-                    Укажите часы работы ресторана
+                    {t.restaurants.workingHoursDesc}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -455,7 +457,7 @@ export default function EditRestaurantPage() {
                         size="sm"
                         onClick={() => copyToAllDays(index)}
                       >
-                        Копировать
+                        {t.restaurants.copyToAll}
                       </Button>
                     </div>
                   ))}
@@ -469,13 +471,13 @@ export default function EditRestaurantPage() {
                 variant="outline"
                 onClick={() => router.back()}
               >
-                Отмена
+                {t.common.cancel}
               </Button>
               <Button type="submit" disabled={updateMutation.isPending}>
                 {updateMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Сохранить изменения
+                {t.restaurants.saveChanges}
               </Button>
             </div>
           </form>
