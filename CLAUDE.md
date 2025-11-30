@@ -98,4 +98,31 @@ Both implement optimistic updates for smooth UX.
 
 When user has multiple restaurants, a dropdown appears in the header to switch between them. The selected restaurant is persisted in `restaurant-storage` via Zustand. Restaurants are loaded in the dashboard layout to ensure availability across all pages.
 
+## Deployment (Railway)
 
+### Production URLs
+- **Frontend**: https://frontend-production.up.railway.app (после `railway domain`)
+- **Backend**: https://lively-possibility-production.up.railway.app
+
+### Deployment Commands
+
+```bash
+railway link              # Привязка к проекту/сервису
+railway variables set NEXT_PUBLIC_API_URL=https://lively-possibility-production.up.railway.app
+railway up                # Деплой
+railway domain            # Получение публичного домена
+```
+
+### Configuration Files
+- `railway.toml` - Railway build configuration with Dockerfile builder
+- `Dockerfile` - Multi-stage build for Next.js standalone output
+- `.dockerignore` - Files excluded from Docker build
+
+### Environment Variables (Railway)
+
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_API_URL` | Backend API URL (set before build) |
+| `PORT` | Auto-set by Railway |
+
+**Important**: `NEXT_PUBLIC_API_URL` must be set before deployment because Next.js injects it at build time, not runtime.

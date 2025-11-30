@@ -401,5 +401,49 @@
       }
     },
     "isImported": false
+  },
+  {
+    "id": "TASK_243",
+    "priority": "LOW",
+    "tags": [],
+    "title": "после регистрации перебрасывать на строницу логин",
+    "description": "",
+    "status": "TODO",
+    "date": {
+      "date": {
+        "year": 2025,
+        "month": 12,
+        "day": 1
+      },
+      "time": {
+        "hour": 0,
+        "minute": 31,
+        "second": 28,
+        "nano": 841971000
+      }
+    },
+    "isImported": false
+  },
+  {
+    "id": "TASK_258",
+    "priority": "LOW",
+    "tags": [],
+    "title": "ошибка вси первом входе",
+    "description": "",
+    "status": "TODO",
+    "date": {
+      "date": {
+        "year": 2025,
+        "month": 12,
+        "day": 1
+      },
+      "time": {
+        "hour": 0,
+        "minute": 31,
+        "second": 40,
+        "nano": 968925000
+      }
+    },
+    "isImported": false
   }
 ]
