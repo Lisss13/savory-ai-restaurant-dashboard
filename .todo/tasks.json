@@ -250,7 +250,7 @@
     "tags": [],
     "title": "разобраться с qr кодами ",
     "description": "",
-    "status": "TODO",
+    "status": "DONE",
     "date": {
       "date": {
         "year": 2025,
@@ -262,6 +262,19 @@
         "minute": 5,
         "second": 37,
         "nano": 986623000
+      }
+    },
+    "finishDate": {
+      "date": {
+        "year": 2025,
+        "month": 11,
+        "day": 30
+      },
+      "time": {
+        "hour": 16,
+        "minute": 20,
+        "second": 12,
+        "nano": 990255000
       }
     },
     "isImported": false

@@ -56,9 +56,8 @@ export function Header({ breadcrumbs }: HeaderProps) {
         </Breadcrumb>
       )}
 
-      {hasMultipleRestaurants && (
-        <>
-          <Separator orientation="vertical" className="mx-2 h-4" />
+      <div className="ml-auto flex items-center gap-2">
+        {hasMultipleRestaurants && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2">
@@ -69,7 +68,7 @@ export function Header({ breadcrumbs }: HeaderProps) {
                 <ChevronDown className="h-4 w-4 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuContent align="end" className="w-56">
               {restaurants.map((restaurant) => (
                 <DropdownMenuItem
                   key={restaurant.id}
@@ -84,10 +83,8 @@ export function Header({ breadcrumbs }: HeaderProps) {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-        </>
-      )}
+        )}
 
-      <div className="ml-auto flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
