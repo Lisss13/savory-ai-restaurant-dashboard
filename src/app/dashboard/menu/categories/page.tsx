@@ -47,6 +47,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { categoryApi, dishApi } from '@/lib/api';
 import { useRestaurantStore } from '@/store/restaurant';
+import { RestaurantRequired } from '@/components/restaurant-required';
 import type { MenuCategory, Dish } from '@/types';
 
 interface SortableCategoryItemProps {
@@ -238,14 +239,7 @@ export default function CategoriesPage() {
       <>
         <Header breadcrumbs={[{ title: 'Дашборд', href: '/dashboard' }, { title: 'Меню' }, { title: 'Категории' }]} />
         <main className="flex-1 p-6">
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center py-10">
-              <h3 className="text-lg font-semibold mb-2">Выберите ресторан</h3>
-              <p className="text-muted-foreground text-center">
-                Для управления категориями меню необходимо выбрать ресторан
-              </p>
-            </CardContent>
-          </Card>
+          <RestaurantRequired title="категориями меню" />
         </main>
       </>
     );

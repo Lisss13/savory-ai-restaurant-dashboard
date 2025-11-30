@@ -27,7 +27,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { useAuthStore } from '@/store/auth';
+import { authApi } from '@/lib/api';
 
 const registerSchema = z.object({
   company: z.string().min(1, 'Введите название компании'),
@@ -48,7 +48,6 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<RegisterFormValues>({
@@ -67,15 +66,15 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
     try {
-      await register({
+      await authApi.register({
         company: data.company,
         name: data.name,
         email: data.email,
         phone: data.phone,
         password: data.password,
       });
-      toast.success('Регистрация успешна');
-      router.push('/dashboard');
+      toast.success('Регистрация успешна! Войдите в систему.');
+      router.push('/login');
     } catch (error: unknown) {
       const err = error as { response?: { data?: { messages?: string[] } } };
       toast.error(err.response?.data?.messages?.[0] || 'Ошибка регистрации');

@@ -285,7 +285,7 @@
     "tags": [],
     "title": "Разобраться с загрузкой файлов ",
     "description": "",
-    "status": "IN_PROGRESS",
+    "status": "DONE",
     "date": {
       "date": {
         "year": 2025,
@@ -297,6 +297,19 @@
         "minute": 5,
         "second": 49,
         "nano": 87194000
+      }
+    },
+    "finishDate": {
+      "date": {
+        "year": 2025,
+        "month": 12,
+        "day": 1
+      },
+      "time": {
+        "hour": 0,
+        "minute": 34,
+        "second": 11,
+        "nano": 230516000
       }
     },
     "isImported": false
@@ -408,7 +421,7 @@
     "tags": [],
     "title": "после регистрации перебрасывать на строницу логин",
     "description": "",
-    "status": "TODO",
+    "status": "DONE",
     "date": {
       "date": {
         "year": 2025,
@@ -422,6 +435,19 @@
         "nano": 841971000
       }
     },
+    "finishDate": {
+      "date": {
+        "year": 2025,
+        "month": 12,
+        "day": 1
+      },
+      "time": {
+        "hour": 0,
+        "minute": 42,
+        "second": 7,
+        "nano": 224593000
+      }
+    },
     "isImported": false
   },
   {
@@ -430,7 +456,7 @@
     "tags": [],
     "title": "ошибка вси первом входе",
     "description": "",
-    "status": "TODO",
+    "status": "DONE",
     "date": {
       "date": {
         "year": 2025,
@@ -442,6 +468,41 @@
         "minute": 31,
         "second": 40,
         "nano": 968925000
+      }
+    },
+    "finishDate": {
+      "date": {
+        "year": 2025,
+        "month": 12,
+        "day": 1
+      },
+      "time": {
+        "hour": 0,
+        "minute": 46,
+        "second": 52,
+        "nano": 937859000
+      }
+    },
+    "isImported": false
+  },
+  {
+    "id": "TASK_319",
+    "priority": "LOW",
+    "tags": [],
+    "title": "категории и бл/да обшие по всем ресторанам",
+    "description": "",
+    "status": "IN_PROGRESS",
+    "date": {
+      "date": {
+        "year": 2025,
+        "month": 12,
+        "day": 1
+      },
+      "time": {
+        "hour": 0,
+        "minute": 42,
+        "second": 39,
+        "nano": 676177000
       }
     },
     "isImported": false

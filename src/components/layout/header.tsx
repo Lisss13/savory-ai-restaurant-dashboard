@@ -32,7 +32,7 @@ export function Header({ breadcrumbs }: HeaderProps) {
   const { restaurants, selectedRestaurant, setSelectedRestaurant } = useRestaurantStore();
   const { t, language, setLanguage } = useTranslation();
 
-  const hasMultipleRestaurants = restaurants.length > 1;
+  const hasMultipleRestaurants = (restaurants?.length ?? 0) > 1;
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
@@ -71,7 +71,7 @@ export function Header({ breadcrumbs }: HeaderProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              {restaurants.map((restaurant) => (
+              {restaurants?.map((restaurant) => (
                 <DropdownMenuItem
                   key={restaurant.id}
                   onClick={() => setSelectedRestaurant(restaurant)}

@@ -52,6 +52,7 @@ import {
 } from '@/components/ui/table';
 import { dishApi, categoryApi, getImageUrl } from '@/lib/api';
 import { useRestaurantStore } from '@/store/restaurant';
+import { RestaurantRequired } from '@/components/restaurant-required';
 import type { Dish, MenuCategory } from '@/types';
 
 export default function DishesPage() {
@@ -109,14 +110,7 @@ export default function DishesPage() {
       <>
         <Header breadcrumbs={[{ title: 'Дашборд', href: '/dashboard' }, { title: 'Меню' }, { title: 'Блюда' }]} />
         <main className="flex-1 p-6">
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-10">
-              <h3 className="text-lg font-semibold mb-2">Выберите ресторан</h3>
-              <p className="text-muted-foreground text-center">
-                Для управления блюдами необходимо выбрать ресторан
-              </p>
-            </CardContent>
-          </Card>
+          <RestaurantRequired title="блюдами" />
         </main>
       </>
     );
