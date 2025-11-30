@@ -2,9 +2,8 @@
 
 import * as React from 'react';
 import { useTheme } from 'next-themes';
-import { Moon, Sun, Bell, Search, Store, Check, ChevronDown } from 'lucide-react';
+import { Moon, Sun, Store, Check, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -89,22 +88,6 @@ export function Header({ breadcrumbs }: HeaderProps) {
       )}
 
       <div className="ml-auto flex items-center gap-2">
-        <div className="relative hidden md:block">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Поиск..."
-            className="w-64 pl-8"
-          />
-        </div>
-
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-4 w-4" />
-          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
-            3
-          </span>
-        </Button>
-
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
