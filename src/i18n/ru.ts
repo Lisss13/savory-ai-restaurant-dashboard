@@ -55,6 +55,19 @@ export const ru = {
     sendResetLink: 'Отправить ссылку',
     resetLinkSent: 'Ссылка для сброса отправлена',
     passwordChanged: 'Пароль изменён',
+    // Register page
+    registerToSavoryAI: 'Зарегистрируйтесь в Savory AI',
+    yourName: 'Ваше имя',
+    phoneOptional: 'Телефон (опционально)',
+    iAccept: 'Я принимаю',
+    termsOfService: 'условия использования',
+    enterCompanyName: 'Введите название компании',
+    enterYourName: 'Введите ваше имя',
+    passwordsDoNotMatch: 'Пароли не совпадают',
+    mustAcceptTerms: 'Вы должны принять условия использования',
+    companyPlaceholder: 'ООО Ресторан',
+    namePlaceholder: 'Иван Иванов',
+    loginToAccount2: 'Войти',
   },
 
   // Navigation
@@ -182,6 +195,10 @@ export const ru = {
     enterAddress: 'Введите адрес',
     enterPhone: 'Введите телефон',
     enterValidUrl: 'Введите корректный URL',
+    // Currency
+    currency: 'Валюта',
+    currencyDesc: 'Валюта для отображения цен',
+    selectCurrency: 'Выберите валюту',
     // Days of week
     sunday: 'Воскресенье',
     monday: 'Понедельник',

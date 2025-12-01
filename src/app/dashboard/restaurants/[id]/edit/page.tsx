@@ -23,9 +23,29 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {getImageUrl, restaurantApi, uploadApi} from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 import { useTranslation } from '@/i18n';
+
+const CURRENCIES = [
+  { code: 'USD', name: 'US Dollar', symbol: '$' },
+  { code: 'EUR', name: 'Euro', symbol: '€' },
+  { code: 'RUB', name: 'Russian Ruble', symbol: '₽' },
+  { code: 'GBP', name: 'British Pound', symbol: '£' },
+  { code: 'UAH', name: 'Ukrainian Hryvnia', symbol: '₴' },
+  { code: 'KZT', name: 'Kazakhstani Tenge', symbol: '₸' },
+  { code: 'BYN', name: 'Belarusian Ruble', symbol: 'Br' },
+  { code: 'AED', name: 'UAE Dirham', symbol: 'د.إ' },
+  { code: 'TRY', name: 'Turkish Lira', symbol: '₺' },
+  { code: 'CNY', name: 'Chinese Yuan', symbol: '¥' },
+];
 
 const workingHourSchema = z.object({
   day_of_week: z.number(),
@@ -67,6 +87,7 @@ export default function EditRestaurantPage() {
     website: z.string().url(t.restaurants.enterValidUrl).optional().or(z.literal('')),
     description: z.string().optional(),
     image_url: z.string().optional(),
+    currency: z.string().optional(),
     working_hours: z.array(workingHourSchema),
   });
 
@@ -90,6 +111,7 @@ export default function EditRestaurantPage() {
       website: '',
       description: '',
       image_url: '',
+      currency: 'USD',
       working_hours: defaultWorkingHours,
     },
   });
@@ -124,6 +146,7 @@ export default function EditRestaurantPage() {
         website: restaurant.website || '',
         description: restaurant.description || '',
         image_url: restaurant.image_url || '',
+        currency: restaurant.currency || 'USD',
         working_hours: formattedHours,
       });
     }
@@ -322,6 +345,31 @@ export default function EditRestaurantPage() {
                             {...field}
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="currency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t.restaurants.currency}</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t.restaurants.selectCurrency} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {CURRENCIES.map((currency) => (
+                              <SelectItem key={currency.code} value={currency.code}>
+                                {currency.symbol} {currency.code} - {currency.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}

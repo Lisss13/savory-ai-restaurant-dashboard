@@ -74,6 +74,7 @@ export interface Restaurant {
   website?: string;
   description?: string;
   image_url?: string;
+  currency?: string;
   working_hours: WorkingHour[];
   reservation_duration?: number;
   min_reservation_time?: number;
@@ -95,6 +96,7 @@ export interface CreateRestaurantRequest {
   website?: string;
   description?: string;
   image_url?: string;
+  currency?: string;
   working_hours: WorkingHour[];
   reservation_duration?: number;
   min_reservation_time?: number;

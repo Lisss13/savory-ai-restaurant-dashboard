@@ -489,6 +489,10 @@ components:
         image_url:
           type: string
           description: URL изображения
+        currency:
+          type: string
+          description: Валюта для отображения цен (ISO 4217)
+          example: "USD"
         working_hours:
           type: array
           description: Часы работы по дням недели
@@ -546,6 +550,12 @@ components:
         image_url:
           type: string
           description: URL изображения
+        currency:
+          type: string
+          description: Валюта для цен (ISO 4217). По умолчанию USD
+          minLength: 3
+          maxLength: 3
+          example: "USD"
         working_hours:
           type: array
           description: Расписание работы
@@ -595,6 +605,12 @@ components:
           type: string
         image_url:
           type: string
+        currency:
+          type: string
+          description: Валюта для цен (ISO 4217)
+          minLength: 3
+          maxLength: 3
+          example: "EUR"
 
     # ==================== Table ====================
     TableResponse:
@@ -753,7 +769,11 @@ components:
               type: integer
             name:
               type: string
-        menu_category:
+            currency:
+              type: string
+              description: Валюта для отображения цен (ISO 4217)
+              example: "USD"
+        menuCategory:
           type: object
           description: Категория меню
           properties:
@@ -774,6 +794,22 @@ components:
         image:
           type: string
           description: URL изображения
+        proteins:
+          type: number
+          format: float
+          description: Белки (г)
+        fats:
+          type: number
+          format: float
+          description: Жиры (г)
+        carbohydrates:
+          type: number
+          format: float
+          description: Углеводы (г)
+        calories:
+          type: number
+          format: float
+          description: Калории (ккал)
         ingredients:
           type: array
           description: Список ингредиентов
@@ -854,6 +890,22 @@ components:
         image:
           type: string
           description: URL изображения
+        proteins:
+          type: number
+          format: float
+          description: Белки (г)
+        fats:
+          type: number
+          format: float
+          description: Жиры (г)
+        carbohydrates:
+          type: number
+          format: float
+          description: Углеводы (г)
+        calories:
+          type: number
+          format: float
+          description: Калории (ккал)
         ingredients:
           type: array
           description: Ингредиенты
@@ -909,6 +961,22 @@ components:
         image:
           type: string
           description: URL изображения
+        proteins:
+          type: number
+          format: float
+          description: Белки (г)
+        fats:
+          type: number
+          format: float
+          description: Жиры (г)
+        carbohydrates:
+          type: number
+          format: float
+          description: Углеводы (г)
+        calories:
+          type: number
+          format: float
+          description: Калории (ккал)
         ingredients:
           type: array
           description: Ингредиенты

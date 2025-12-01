@@ -57,6 +57,19 @@ export const en: Translations = {
     sendResetLink: 'Send reset link',
     resetLinkSent: 'Reset link sent',
     passwordChanged: 'Password changed',
+    // Register page
+    registerToSavoryAI: 'Register with Savory AI',
+    yourName: 'Your name',
+    phoneOptional: 'Phone (optional)',
+    iAccept: 'I accept the',
+    termsOfService: 'terms of service',
+    enterCompanyName: 'Enter company name',
+    enterYourName: 'Enter your name',
+    passwordsDoNotMatch: 'Passwords do not match',
+    mustAcceptTerms: 'You must accept the terms of service',
+    companyPlaceholder: 'Restaurant LLC',
+    namePlaceholder: 'John Doe',
+    loginToAccount2: 'Sign in',
   },
 
   // Navigation
@@ -184,6 +197,10 @@ export const en: Translations = {
     enterAddress: 'Enter address',
     enterPhone: 'Enter phone',
     enterValidUrl: 'Enter a valid URL',
+    // Currency
+    currency: 'Currency',
+    currencyDesc: 'Currency for displaying prices',
+    selectCurrency: 'Select currency',
     // Days of week
     sunday: 'Sunday',
     monday: 'Monday',
