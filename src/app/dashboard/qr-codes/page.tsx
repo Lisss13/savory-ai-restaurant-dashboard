@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Download, Store, Armchair, Loader2 } from 'lucide-react';
+import { useTranslation } from '@/i18n';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +23,7 @@ import { useRestaurantStore } from '@/store/restaurant';
 import type { Table } from '@/types';
 
 export default function QRCodesPage() {
+  const { t } = useTranslation();
   const { selectedRestaurant } = useRestaurantStore();
   const [selectedTableId, setSelectedTableId] = useState<string>('');
   const [isDownloading, setIsDownloading] = useState(false);
@@ -56,7 +58,7 @@ export default function QRCodesPage() {
       const url = URL.createObjectURL(blob);
       setTableQrPreview(url);
     } catch {
-      toast.error('Ошибка загрузки QR-кода');
+      toast.error(t.qrSection.qrLoadError);
     }
   };
 
@@ -71,9 +73,9 @@ export default function QRCodesPage() {
       link.download = `qr-${selectedRestaurant.name}.png`;
       link.click();
       URL.revokeObjectURL(url);
-      toast.success('QR-код скачан');
+      toast.success(t.qrSection.qrDownloaded);
     } catch {
-      toast.error('Ошибка скачивания QR-кода');
+      toast.error(t.qrSection.qrDownloadError);
     } finally {
       setIsDownloading(false);
     }
@@ -90,9 +92,9 @@ export default function QRCodesPage() {
       link.download = `qr-${tableName}.png`;
       link.click();
       URL.revokeObjectURL(url);
-      toast.success('QR-код скачан');
+      toast.success(t.qrSection.qrDownloaded);
     } catch {
-      toast.error('Ошибка скачивания QR-кода');
+      toast.error(t.qrSection.qrDownloadError);
     } finally {
       setIsDownloading(false);
     }
@@ -108,13 +110,13 @@ export default function QRCodesPage() {
   if (!selectedRestaurant) {
     return (
       <>
-        <Header breadcrumbs={[{ title: 'Дашборд', href: '/dashboard' }, { title: 'QR-коды' }]} />
+        <Header breadcrumbs={[{ title: t.nav.dashboard, href: '/dashboard' }, { title: t.nav.qrCodes }]} />
         <main className="flex-1 p-6">
           <Card className="border-dashed">
             <CardContent className="flex flex-col items-center justify-center py-10">
-              <h3 className="text-lg font-semibold mb-2">Выберите ресторан</h3>
+              <h3 className="text-lg font-semibold mb-2">{t.qrSection.selectRestaurant}</h3>
               <p className="text-muted-foreground text-center">
-                Для генерации QR-кодов необходимо выбрать ресторан
+                {t.qrSection.selectRestaurantRequired}
               </p>
             </CardContent>
           </Card>
@@ -127,15 +129,15 @@ export default function QRCodesPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'QR-коды' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.qrCodes },
         ]}
       />
       <main className="flex-1 space-y-6 p-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">QR-коды</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t.qrSection.title}</h1>
           <p className="text-muted-foreground">
-            Генерируйте QR-коды для ресторана и столов
+            {t.qrSection.subtitle}
           </p>
         </div>
 
@@ -143,11 +145,11 @@ export default function QRCodesPage() {
           <TabsList>
             <TabsTrigger value="restaurant" className="gap-2">
               <Store className="h-4 w-4" />
-              QR-код ресторана
+              {t.qrSection.restaurantQRCode}
             </TabsTrigger>
             <TabsTrigger value="tables" className="gap-2">
               <Armchair className="h-4 w-4" />
-              QR-коды столов
+              {t.qrSection.tableQRCodes}
             </TabsTrigger>
           </TabsList>
 
@@ -155,9 +157,9 @@ export default function QRCodesPage() {
             <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>QR-код ресторана</CardTitle>
+                  <CardTitle>{t.qrSection.restaurantQRCode}</CardTitle>
                   <CardDescription>
-                    Общий QR-код для входа в чат с рестораном
+                    {t.qrSection.restaurantQRDesc}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -172,7 +174,7 @@ export default function QRCodesPage() {
                       />
                     ) : (
                       <div className="text-center text-muted-foreground">
-                        <p className="text-sm">Ошибка загрузки QR-кода</p>
+                        <p className="text-sm">{t.qrSection.errorLoadingQR}</p>
                       </div>
                     )}
                   </div>
@@ -187,41 +189,41 @@ export default function QRCodesPage() {
                     ) : (
                       <Download className="mr-2 h-4 w-4" />
                     )}
-                    Скачать
+                    {t.qrSection.download}
                   </Button>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Как использовать</CardTitle>
+                  <CardTitle>{t.qrSection.howToUse}</CardTitle>
                   <CardDescription>
-                    Инструкция по размещению QR-кода
+                    {t.qrSection.howToUseDesc}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <h4 className="font-medium">1. Скачайте QR-код</h4>
+                    <h4 className="font-medium">{t.qrSection.step1Title}</h4>
                     <p className="text-sm text-muted-foreground">
-                      Нажмите кнопку "Скачать" для загрузки PNG файла
+                      {t.qrSection.step1Desc}
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <h4 className="font-medium">2. Распечатайте</h4>
+                    <h4 className="font-medium">{t.qrSection.step2Title}</h4>
                     <p className="text-sm text-muted-foreground">
-                      Распечатайте QR-код на плотной бумаге или заламинируйте
+                      {t.qrSection.step2Desc}
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <h4 className="font-medium">3. Разместите в зале</h4>
+                    <h4 className="font-medium">{t.qrSection.step3Title}</h4>
                     <p className="text-sm text-muted-foreground">
-                      Разместите QR-код на видном месте: у входа, на стойке или барной стойке
+                      {t.qrSection.step3Desc}
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <h4 className="font-medium">4. Гости сканируют</h4>
+                    <h4 className="font-medium">{t.qrSection.step4Title}</h4>
                     <p className="text-sm text-muted-foreground">
-                      Гости сканируют код камерой телефона и попадают в чат с AI-ассистентом
+                      {t.qrSection.step4Desc}
                     </p>
                   </div>
                 </CardContent>
@@ -233,25 +235,25 @@ export default function QRCodesPage() {
             <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>QR-код для стола</CardTitle>
+                  <CardTitle>{t.qrSection.tableQRCode}</CardTitle>
                   <CardDescription>
-                    Выберите стол для генерации QR-кода
+                    {t.qrSection.selectTableForQR}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Выберите стол</Label>
+                    <Label>{t.qrSection.selectTable}</Label>
                     <Select
                       value={selectedTableId}
                       onValueChange={handleTableSelect}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Выберите стол" />
+                        <SelectValue placeholder={t.qrSection.selectTable} />
                       </SelectTrigger>
                       <SelectContent>
                         {tables?.map((table: Table) => (
                           <SelectItem key={table.id} value={table.id.toString()}>
-                            {table.name} ({table.guestCount} мест)
+                            {table.name} ({table.guestCount} {t.qrSection.seats})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -267,7 +269,7 @@ export default function QRCodesPage() {
                       />
                     ) : (
                       <div className="text-center text-muted-foreground">
-                        <p className="text-sm">Выберите стол для предпросмотра</p>
+                        <p className="text-sm">{t.qrSection.selectTablePreview}</p>
                       </div>
                     )}
                   </div>
@@ -289,21 +291,21 @@ export default function QRCodesPage() {
                     ) : (
                       <Download className="mr-2 h-4 w-4" />
                     )}
-                    Скачать QR-код
+                    {t.qrSection.downloadTableQR}
                   </Button>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Массовая генерация</CardTitle>
+                  <CardTitle>{t.qrSection.bulkGeneration}</CardTitle>
                   <CardDescription>
-                    Скачайте QR-коды для всех столов
+                    {t.qrSection.bulkGenerationDesc}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-sm text-muted-foreground">
-                    Всего столов: {tables?.length || 0}
+                    {t.qrSection.totalTables}: {tables?.length || 0}
                   </p>
 
                   <div className="grid gap-2 max-h-64 overflow-y-auto">
@@ -316,7 +318,7 @@ export default function QRCodesPage() {
                           <Armchair className="h-4 w-4 text-muted-foreground" />
                           <span className="font-medium">{table.name}</span>
                           <span className="text-sm text-muted-foreground">
-                            ({table.guestCount} мест)
+                            ({table.guestCount} {t.qrSection.seats})
                           </span>
                         </div>
                         <Button
@@ -332,7 +334,7 @@ export default function QRCodesPage() {
 
                   {(!tables || tables.length === 0) && (
                     <p className="text-center text-muted-foreground py-4">
-                      Нет столов для генерации QR-кодов
+                      {t.qrSection.noTablesForQR}
                     </p>
                   )}
                 </CardContent>

@@ -12,6 +12,7 @@ import {
   TrendingDown,
   Armchair,
 } from 'lucide-react';
+import { useTranslation } from '@/i18n';
 import {
   LineChart,
   Line,
@@ -47,9 +48,10 @@ interface StatCardProps {
   change?: number;
   icon: React.ReactNode;
   loading?: boolean;
+  vsPrevPeriodText?: string;
 }
 
-function StatCard({ title, value, change, icon, loading }: StatCardProps) {
+function StatCard({ title, value, change, icon, loading, vsPrevPeriodText }: StatCardProps) {
   if (loading) {
     return (
       <Card>
@@ -82,7 +84,7 @@ function StatCard({ title, value, change, icon, loading }: StatCardProps) {
             ) : (
               <TrendingDown className="h-3 w-3 mr-1" />
             )}
-            {Math.abs(change)}% vs прошлый период
+            {Math.abs(change)}% {vsPrevPeriodText}
           </p>
         )}
       </CardContent>
@@ -91,6 +93,7 @@ function StatCard({ title, value, change, icon, loading }: StatCardProps) {
 }
 
 export default function AnalyticsOverviewPage() {
+  const { t } = useTranslation();
   const { selectedRestaurant } = useRestaurantStore();
   const [period, setPeriod] = useState('7');
 
@@ -146,10 +149,10 @@ export default function AnalyticsOverviewPage() {
 
   // Status distribution for pie chart
   const statusData = [
-    { name: 'Подтверждено', value: confirmedReservations },
-    { name: 'Завершено', value: completedReservations },
-    { name: 'Отменено', value: cancelledReservations },
-    { name: 'Ожидает', value: pendingReservations },
+    { name: t.reservations.confirmed, value: confirmedReservations },
+    { name: t.reservations.completed, value: completedReservations },
+    { name: t.reservations.cancelled, value: cancelledReservations },
+    { name: t.reservations.pending, value: pendingReservations },
   ].filter((d) => d.value > 0);
 
   if (!selectedRestaurant) {
@@ -157,15 +160,15 @@ export default function AnalyticsOverviewPage() {
       <>
         <Header
           breadcrumbs={[
-            { title: 'Дашборд', href: '/dashboard' },
-            { title: 'Аналитика' },
-            { title: 'Обзор' },
+            { title: t.nav.dashboard, href: '/dashboard' },
+            { title: t.nav.analytics },
+            { title: t.nav.overview },
           ]}
         />
         <main className="flex-1 p-6">
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
-              Выберите ресторан для просмотра аналитики
+              {t.analyticsSection.selectRestaurantForAnalytics}
             </CardContent>
           </Card>
         </main>
@@ -177,55 +180,58 @@ export default function AnalyticsOverviewPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Аналитика' },
-          { title: 'Обзор' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.analytics },
+          { title: t.nav.overview },
         ]}
       />
       <main className="flex-1 space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Аналитика</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t.analyticsSection.title}</h1>
             <p className="text-muted-foreground">
-              Общая статистика ресторана
+              {t.analyticsSection.overallRestaurantStats}
             </p>
           </div>
           <Select value={period} onValueChange={setPeriod}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Период" />
+              <SelectValue placeholder={t.analyticsSection.period} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="7">Последние 7 дней</SelectItem>
-              <SelectItem value="30">Последние 30 дней</SelectItem>
-              <SelectItem value="90">Последние 90 дней</SelectItem>
+              <SelectItem value="7">{t.analyticsSection.last7Days}</SelectItem>
+              <SelectItem value="30">{t.analyticsSection.last30Days}</SelectItem>
+              <SelectItem value="90">{t.analyticsSection.last90Days}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            title="Всего бронирований"
+            title={t.analyticsSection.totalReservations}
             value={totalReservations}
             change={12}
             icon={<CalendarDays className="h-4 w-4" />}
             loading={isLoading}
+            vsPrevPeriodText={t.analyticsSection.vsPrevPeriod}
           />
           <StatCard
-            title="Подтверждённых"
+            title={t.analyticsSection.confirmed}
             value={confirmedReservations}
             change={8}
             icon={<Users className="h-4 w-4" />}
             loading={isLoading}
+            vsPrevPeriodText={t.analyticsSection.vsPrevPeriod}
           />
           <StatCard
-            title="Активных чатов"
+            title={t.analyticsSection.activeChats}
             value={totalChats}
             change={-5}
             icon={<MessageSquare className="h-4 w-4" />}
             loading={isLoading}
+            vsPrevPeriodText={t.analyticsSection.vsPrevPeriod}
           />
           <StatCard
-            title="Процент отмен"
+            title={t.analyticsSection.cancellationRate}
             value={totalReservations > 0 ? `${Math.round((cancelledReservations / totalReservations) * 100)}%` : '0%'}
             icon={<Armchair className="h-4 w-4" />}
             loading={isLoading}
@@ -235,9 +241,9 @@ export default function AnalyticsOverviewPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Бронирования по дням</CardTitle>
+              <CardTitle>{t.analyticsSection.reservationsByDay}</CardTitle>
               <CardDescription>
-                Динамика за выбранный период
+                {t.analyticsSection.dynamicsForPeriod}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -245,7 +251,7 @@ export default function AnalyticsOverviewPage() {
                 <Skeleton className="h-[300px] w-full" />
               ) : chartData.every(d => d.reservations === 0) ? (
                 <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                  Нет бронирований за выбранный период
+                  {t.analyticsSection.noReservationsForPeriod}
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height={300}>
@@ -259,7 +265,7 @@ export default function AnalyticsOverviewPage() {
                       dataKey="reservations"
                       stroke="#8884d8"
                       strokeWidth={2}
-                      name="Бронирования"
+                      name={t.analyticsSection.reservations}
                       dot={{ fill: '#8884d8', strokeWidth: 2 }}
                     />
                   </LineChart>
@@ -270,9 +276,9 @@ export default function AnalyticsOverviewPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Распределение по статусам</CardTitle>
+              <CardTitle>{t.analyticsSection.statusDistribution}</CardTitle>
               <CardDescription>
-                Статусы бронирований
+                {t.analyticsSection.reservationStatuses}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -280,7 +286,7 @@ export default function AnalyticsOverviewPage() {
                 <Skeleton className="h-[300px] w-full" />
               ) : statusData.length === 0 ? (
                 <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                  Нет данных для отображения
+                  {t.analyticsSection.noDataToDisplay}
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height={300}>

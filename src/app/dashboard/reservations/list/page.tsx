@@ -63,14 +63,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { reservationApi, tableApi } from '@/lib/api';
 import { useRestaurantStore } from '@/store/restaurant';
+import { useTranslation } from '@/i18n';
 import type { Reservation, Table as TableType, AvailableSlot } from '@/types';
-
-const STATUS_MAP = {
-  pending: { label: 'Ожидает', variant: 'secondary' as const },
-  confirmed: { label: 'Подтверждено', variant: 'default' as const },
-  cancelled: { label: 'Отменено', variant: 'destructive' as const },
-  completed: { label: 'Завершено', variant: 'outline' as const },
-};
 
 interface CreateReservationForm {
   customer_name: string;
@@ -84,6 +78,7 @@ interface CreateReservationForm {
 }
 
 export default function ReservationsListPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { selectedRestaurant } = useRestaurantStore();
@@ -136,6 +131,13 @@ export default function ReservationsListPage() {
     enabled: !!selectedRestaurant && !!formData.reservation_date && formData.guest_count > 0,
   });
 
+  const STATUS_MAP = {
+    pending: { label: t.reservations.pending, variant: 'secondary' as const },
+    confirmed: { label: t.reservations.confirmed, variant: 'default' as const },
+    cancelled: { label: t.reservations.cancelled, variant: 'destructive' as const },
+    completed: { label: t.reservations.completed, variant: 'outline' as const },
+  };
+
   const createMutation = useMutation({
     mutationFn: () =>
       reservationApi.create({
@@ -151,12 +153,12 @@ export default function ReservationsListPage() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
-      toast.success('Бронирование создано');
+      toast.success(t.reservations.reservationCreated);
       setIsCreateOpen(false);
       resetForm();
     },
     onError: () => {
-      toast.error('Ошибка при создании бронирования');
+      toast.error(t.reservations.reservationCreateError);
     },
   });
 
@@ -165,10 +167,10 @@ export default function ReservationsListPage() {
       reservationApi.update(id, { status: status as Reservation['status'] }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
-      toast.success('Статус обновлён');
+      toast.success(t.reservations.statusUpdated);
     },
     onError: () => {
-      toast.error('Ошибка при обновлении статуса');
+      toast.error(t.reservations.statusUpdateError);
     },
   });
 
@@ -176,10 +178,10 @@ export default function ReservationsListPage() {
     mutationFn: reservationApi.cancel,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
-      toast.success('Бронирование отменено');
+      toast.success(t.reservations.reservationCancelled);
     },
     onError: () => {
-      toast.error('Ошибка при отмене бронирования');
+      toast.error(t.reservations.reservationCancelError);
     },
   });
 
@@ -212,13 +214,13 @@ export default function ReservationsListPage() {
   if (!selectedRestaurant) {
     return (
       <>
-        <Header breadcrumbs={[{ title: 'Дашборд', href: '/dashboard' }, { title: 'Бронирования' }]} />
+        <Header breadcrumbs={[{ title: t.nav.dashboard, href: '/dashboard' }, { title: t.nav.reservations }]} />
         <main className="flex-1 p-6">
           <Card className="border-dashed">
             <CardContent className="flex flex-col items-center justify-center py-10">
-              <h3 className="text-lg font-semibold mb-2">Выберите ресторан</h3>
+              <h3 className="text-lg font-semibold mb-2">{t.restaurants.selectRestaurant}</h3>
               <p className="text-muted-foreground text-center">
-                Для управления бронированиями необходимо выбрать ресторан
+                {t.reservations.selectRestaurantForReservations}
               </p>
             </CardContent>
           </Card>
@@ -231,22 +233,22 @@ export default function ReservationsListPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Бронирования' },
-          { title: 'Список' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.reservations },
+          { title: t.nav.list },
         ]}
       />
       <main className="flex-1 space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Бронирования</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t.reservations.listTitle}</h1>
             <p className="text-muted-foreground">
-              Список всех бронирований
+              {t.reservations.listSubtitle}
             </p>
           </div>
           <Button onClick={() => setIsCreateOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Новое бронирование
+            {t.reservations.newReservation}
           </Button>
         </div>
 
@@ -256,7 +258,7 @@ export default function ReservationsListPage() {
               <div className="relative flex-1 min-w-[200px] max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Поиск по имени или телефону..."
+                  placeholder={t.reservations.searchPlaceholder}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-9"
@@ -266,14 +268,14 @@ export default function ReservationsListPage() {
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-40">
                   <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Статус" />
+                  <SelectValue placeholder={t.reservations.status} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Все статусы</SelectItem>
-                  <SelectItem value="pending">Ожидает</SelectItem>
-                  <SelectItem value="confirmed">Подтверждено</SelectItem>
-                  <SelectItem value="cancelled">Отменено</SelectItem>
-                  <SelectItem value="completed">Завершено</SelectItem>
+                  <SelectItem value="all">{t.reservations.allStatuses}</SelectItem>
+                  <SelectItem value="pending">{t.reservations.pending}</SelectItem>
+                  <SelectItem value="confirmed">{t.reservations.confirmed}</SelectItem>
+                  <SelectItem value="cancelled">{t.reservations.cancelled}</SelectItem>
+                  <SelectItem value="completed">{t.reservations.completed}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -281,7 +283,7 @@ export default function ReservationsListPage() {
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-40">
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateFilter ? format(dateFilter, 'dd.MM.yyyy') : 'Дата'}
+                    {dateFilter ? format(dateFilter, 'dd.MM.yyyy') : t.reservations.date}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -299,7 +301,7 @@ export default function ReservationsListPage() {
                         className="w-full"
                         onClick={() => setDateFilter(undefined)}
                       >
-                        Сбросить
+                        {t.reservations.reset}
                       </Button>
                     </div>
                   )}
@@ -315,19 +317,19 @@ export default function ReservationsListPage() {
               </div>
             ) : filteredReservations?.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                Бронирования не найдены
+                {t.reservations.reservationsNotFound}
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Дата</TableHead>
-                    <TableHead>Время</TableHead>
-                    <TableHead>Гость</TableHead>
-                    <TableHead>Телефон</TableHead>
-                    <TableHead className="text-center">Гостей</TableHead>
-                    <TableHead>Стол</TableHead>
-                    <TableHead>Статус</TableHead>
+                    <TableHead>{t.reservations.date}</TableHead>
+                    <TableHead>{t.reservations.time}</TableHead>
+                    <TableHead>{t.reservations.guest}</TableHead>
+                    <TableHead>{t.reservations.phone}</TableHead>
+                    <TableHead className="text-center">{t.reservations.guests}</TableHead>
+                    <TableHead>{t.reservations.table}</TableHead>
+                    <TableHead>{t.reservations.status}</TableHead>
                     <TableHead className="w-16"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -378,7 +380,7 @@ export default function ReservationsListPage() {
                               onClick={() => router.push(`/dashboard/reservations/${reservation.id}`)}
                             >
                               <Eye className="mr-2 h-4 w-4" />
-                              Подробнее
+                              {t.reservations.viewDetails}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             {reservation.status === 'pending' && (
@@ -391,7 +393,7 @@ export default function ReservationsListPage() {
                                 }
                               >
                                 <Check className="mr-2 h-4 w-4" />
-                                Подтвердить
+                                {t.reservations.confirm}
                               </DropdownMenuItem>
                             )}
                             {(reservation.status === 'pending' ||
@@ -401,7 +403,7 @@ export default function ReservationsListPage() {
                                 onClick={() => cancelMutation.mutate(reservation.id)}
                               >
                                 <X className="mr-2 h-4 w-4" />
-                                Отменить
+                                {t.common.cancel}
                               </DropdownMenuItem>
                             )}
                           </DropdownMenuContent>
@@ -419,57 +421,57 @@ export default function ReservationsListPage() {
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Новое бронирование</DialogTitle>
+            <DialogTitle>{t.reservations.createReservation}</DialogTitle>
             <DialogDescription>
-              Создайте бронирование для гостя
+              {t.reservations.createReservationDesc}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Имя гостя *</Label>
+                <Label>{t.reservations.guestName} *</Label>
                 <Input
                   value={formData.customer_name}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, customer_name: e.target.value }))
                   }
-                  placeholder="Иван Иванов"
+                  placeholder={t.reservations.guestNamePlaceholder}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Телефон *</Label>
+                <Label>{t.reservations.phoneRequired} *</Label>
                 <Input
                   value={formData.customer_phone}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, customer_phone: e.target.value }))
                   }
-                  placeholder="+7 900 123-45-67"
+                  placeholder={t.reservations.phonePlaceholder}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Email</Label>
+              <Label>{t.reservations.email}</Label>
               <Input
                 type="email"
                 value={formData.customer_email}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, customer_email: e.target.value }))
                 }
-                placeholder="email@example.com"
+                placeholder={t.reservations.emailPlaceholder}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Дата *</Label>
+                <Label>{t.reservations.dateRequired} *</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start">
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {formData.reservation_date
                         ? format(formData.reservation_date, 'dd.MM.yyyy')
-                        : 'Выберите дату'}
+                        : t.reservations.selectDate}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -486,7 +488,7 @@ export default function ReservationsListPage() {
                 </Popover>
               </div>
               <div className="space-y-2">
-                <Label>Гостей *</Label>
+                <Label>{t.reservations.guestsRequired} *</Label>
                 <Input
                   type="number"
                   min="1"
@@ -503,7 +505,7 @@ export default function ReservationsListPage() {
 
             {availableSlots && availableSlots.length > 0 && (
               <div className="space-y-2">
-                <Label>Время и стол *</Label>
+                <Label>{t.reservations.timeAndTable} *</Label>
                 <Select
                   value={`${formData.table_id}-${formData.start_time}`}
                   onValueChange={(value) => {
@@ -516,7 +518,7 @@ export default function ReservationsListPage() {
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Выберите время" />
+                    <SelectValue placeholder={t.reservations.selectTime} />
                   </SelectTrigger>
                   <SelectContent>
                     {availableSlots.map((slot: AvailableSlot) => (
@@ -524,7 +526,7 @@ export default function ReservationsListPage() {
                         key={`${slot.table_id}-${slot.start_time}`}
                         value={`${slot.table_id}-${slot.start_time}`}
                       >
-                        {slot.start_time} - {slot.table_name} ({slot.capacity} мест)
+                        {slot.start_time} - {slot.table_name} ({slot.capacity} {t.reservations.seats})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -534,24 +536,24 @@ export default function ReservationsListPage() {
 
             {formData.reservation_date && availableSlots?.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                Нет доступных столов на выбранную дату
+                {t.reservations.noAvailableTables}
               </p>
             )}
 
             <div className="space-y-2">
-              <Label>Примечание</Label>
+              <Label>{t.reservations.note}</Label>
               <Input
                 value={formData.notes}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, notes: e.target.value }))
                 }
-                placeholder="Столик у окна..."
+                placeholder={t.reservations.notePlaceholder}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-              Отмена
+              {t.common.cancel}
             </Button>
             <Button
               onClick={() => createMutation.mutate()}
@@ -564,7 +566,7 @@ export default function ReservationsListPage() {
                 !formData.start_time
               }
             >
-              Создать
+              {t.common.create}
             </Button>
           </DialogFooter>
         </DialogContent>

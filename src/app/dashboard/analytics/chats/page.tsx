@@ -15,6 +15,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import { useTranslation } from '@/i18n';
 import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -32,6 +33,7 @@ import type { ChatSession } from '@/types';
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 export default function ChatsAnalyticsPage() {
+  const { t } = useTranslation();
   const { selectedRestaurant } = useRestaurantStore();
   const [period, setPeriod] = useState('30');
 
@@ -54,14 +56,14 @@ export default function ChatsAnalyticsPage() {
 
   // Source distribution
   const sourceData = [
-    { name: 'Чат столика', value: tableSessions },
-    { name: 'Чат ресторана', value: restaurantSessions },
+    { name: t.analyticsSection.tableChatSource, value: tableSessions },
+    { name: t.analyticsSection.restaurantChatSource, value: restaurantSessions },
   ].filter((d) => d.value > 0);
 
   // Response type distribution
   const responseData = [
-    { name: 'AI-бот', value: aiPercentage },
-    { name: 'Персонал', value: 100 - aiPercentage },
+    { name: t.analyticsSection.aiBot, value: aiPercentage },
+    { name: t.analyticsSection.staff, value: 100 - aiPercentage },
   ];
 
   // Popular questions (mock)
@@ -78,15 +80,15 @@ export default function ChatsAnalyticsPage() {
       <>
         <Header
           breadcrumbs={[
-            { title: 'Дашборд', href: '/dashboard' },
-            { title: 'Аналитика' },
-            { title: 'Чаты' },
+            { title: t.nav.dashboard, href: '/dashboard' },
+            { title: t.nav.analytics },
+            { title: t.analyticsSection.chats },
           ]}
         />
         <main className="flex-1 p-6">
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
-              Выберите ресторан для просмотра аналитики
+              {t.analyticsSection.selectRestaurantForAnalytics}
             </CardContent>
           </Card>
         </main>
@@ -98,27 +100,27 @@ export default function ChatsAnalyticsPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Аналитика' },
-          { title: 'Чаты' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.analytics },
+          { title: t.analyticsSection.chats },
         ]}
       />
       <main className="flex-1 space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Аналитика чатов</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t.analyticsSection.chatsAnalytics}</h1>
             <p className="text-muted-foreground">
-              Статистика общения с гостями
+              {t.analyticsSection.guestCommunicationStats}
             </p>
           </div>
           <Select value={period} onValueChange={setPeriod}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Период" />
+              <SelectValue placeholder={t.analyticsSection.period} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="7">Последние 7 дней</SelectItem>
-              <SelectItem value="30">Последние 30 дней</SelectItem>
-              <SelectItem value="90">Последние 90 дней</SelectItem>
+              <SelectItem value="7">{t.analyticsSection.last7Days}</SelectItem>
+              <SelectItem value="30">{t.analyticsSection.last30Days}</SelectItem>
+              <SelectItem value="90">{t.analyticsSection.last90Days}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -127,7 +129,7 @@ export default function ChatsAnalyticsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Всего сессий
+                {t.analyticsSection.totalSessions}
               </CardTitle>
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -142,7 +144,7 @@ export default function ChatsAnalyticsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Среднее время ответа
+                {t.analyticsSection.avgResponseTime}
               </CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -153,7 +155,7 @@ export default function ChatsAnalyticsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                % AI ответов
+                {t.analyticsSection.aiResponsePercent}
               </CardTitle>
               <Bot className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -164,7 +166,7 @@ export default function ChatsAnalyticsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Чаты столиков
+                {t.analyticsSection.tableChats}
               </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -181,9 +183,9 @@ export default function ChatsAnalyticsPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Источники чатов</CardTitle>
+              <CardTitle>{t.analyticsSection.chatSources}</CardTitle>
               <CardDescription>
-                Распределение по типам
+                {t.analyticsSection.distributionByType}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -191,7 +193,7 @@ export default function ChatsAnalyticsPage() {
                 <Skeleton className="h-[300px] w-full" />
               ) : sourceData.length === 0 ? (
                 <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                  Нет данных
+                  {t.analyticsSection.noData}
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height={300}>
@@ -219,9 +221,9 @@ export default function ChatsAnalyticsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>AI vs Персонал</CardTitle>
+              <CardTitle>{t.analyticsSection.aiVsStaff}</CardTitle>
               <CardDescription>
-                Кто отвечает на вопросы
+                {t.analyticsSection.whoAnswersQuestions}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -250,9 +252,9 @@ export default function ChatsAnalyticsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Популярные вопросы</CardTitle>
+            <CardTitle>{t.analyticsSection.popularQuestions}</CardTitle>
             <CardDescription>
-              Что чаще всего спрашивают гости
+              {t.analyticsSection.whatGuestsAskMost}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -271,7 +273,7 @@ export default function ChatsAnalyticsPage() {
                   tick={{ fontSize: 12 }}
                 />
                 <Tooltip />
-                <Bar dataKey="count" fill="#8884d8" name="Запросов" />
+                <Bar dataKey="count" fill="#8884d8" name={t.analyticsSection.requests} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

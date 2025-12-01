@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { useTranslation } from '@/i18n';
 import {
   MessageSquare,
   Send,
@@ -39,17 +40,18 @@ import { chatApi } from '@/lib/api';
 import { useRestaurantStore } from '@/store/restaurant';
 import type { ChatSession, ChatMessage } from '@/types';
 
-const QUICK_REPLIES = [
-  { text: 'Сейчас подойдёт официант', icon: '👨‍🍳' },
-  { text: 'Ваш заказ готовится', icon: '🍳' },
-  { text: 'Столик забронирован, ждём вас!', icon: '✅' },
-  { text: 'Спасибо за обращение!', icon: '🙏' },
-];
-
 export default function ActiveChatsPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { selectedRestaurant } = useRestaurantStore();
+
+  const QUICK_REPLIES = [
+    { text: t.chatsSection.waiterComing, icon: '👨‍🍳' },
+    { text: t.chatsSection.orderBeingPrepared, icon: '🍳' },
+    { text: t.chatsSection.tableReserved, icon: '✅' },
+    { text: t.chatsSection.thankYou, icon: '🙏' },
+  ];
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
   const [message, setMessage] = useState('');
   const [isAiEnabled, setIsAiEnabled] = useState(true);
@@ -86,7 +88,7 @@ export default function ActiveChatsPage() {
       setIsAiEnabled(false);
     },
     onError: () => {
-      toast.error('Ошибка отправки сообщения');
+      toast.error(t.chatsSection.sendError);
     },
   });
 
@@ -95,10 +97,10 @@ export default function ActiveChatsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chatSessions'] });
       setSelectedSession(null);
-      toast.success('Чат закрыт');
+      toast.success(t.chatsSection.chatClosed);
     },
     onError: () => {
-      toast.error('Ошибка закрытия чата');
+      toast.error(t.chatsSection.chatCloseError);
     },
   });
 
@@ -129,7 +131,7 @@ export default function ActiveChatsPage() {
 
   const handleReturnToAi = () => {
     setIsAiEnabled(true);
-    toast.success('AI-бот снова отвечает на сообщения');
+    toast.success(t.chatsSection.aiReturnedSuccess);
   };
 
   const getMessageIcon = (authorType: string) => {
@@ -169,13 +171,13 @@ export default function ActiveChatsPage() {
   if (!selectedRestaurant) {
     return (
       <>
-        <Header breadcrumbs={[{ title: 'Дашборд', href: '/dashboard' }, { title: 'Чаты' }]} />
+        <Header breadcrumbs={[{ title: t.nav.dashboard, href: '/dashboard' }, { title: t.nav.chats }]} />
         <main className="flex-1 p-6">
           <Card className="border-dashed">
             <CardContent className="flex flex-col items-center justify-center py-10">
-              <h3 className="text-lg font-semibold mb-2">Выберите ресторан</h3>
+              <h3 className="text-lg font-semibold mb-2">{t.restaurants.selectRestaurant}</h3>
               <p className="text-muted-foreground text-center">
-                Для просмотра чатов необходимо выбрать ресторан
+                {t.chatsSection.selectRestaurantForChats}
               </p>
             </CardContent>
           </Card>
@@ -188,24 +190,24 @@ export default function ActiveChatsPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Чаты' },
-          { title: 'Активные' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.chats },
+          { title: t.nav.active },
         ]}
       />
       <main className="flex-1 p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              Активные чаты
+              {t.chatsSection.activeChats}
               {totalUnread > 0 && (
                 <Badge variant="destructive" className="ml-3">
-                  {totalUnread} непрочитанных
+                  {totalUnread} {t.chatsSection.unread}
                 </Badge>
               )}
             </h1>
             <p className="text-muted-foreground">
-              Общайтесь с посетителями в реальном времени
+              {t.chatsSection.communicateInRealTime}
             </p>
           </div>
         </div>
@@ -216,7 +218,7 @@ export default function ActiveChatsPage() {
             <CardHeader className="py-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">
-                  Чаты ({sessions?.length || 0})
+                  {t.chatsSection.chatsCount} ({sessions?.length || 0})
                 </CardTitle>
                 {totalUnread > 0 && (
                   <TooltipProvider>
@@ -225,7 +227,7 @@ export default function ActiveChatsPage() {
                         <Bell className="h-4 w-4 text-destructive animate-pulse" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>{totalUnread} сообщений ожидают ответа</p>
+                        <p>{totalUnread} {t.chatsSection.waitingForResponse}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -243,7 +245,7 @@ export default function ActiveChatsPage() {
                 ) : sessions?.length === 0 ? (
                   <div className="p-4 text-center text-muted-foreground">
                     <MessageSquare className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                    <p>Нет активных чатов</p>
+                    <p>{t.chatsSection.noActiveChats}</p>
                   </div>
                 ) : (
                   <div className="divide-y">
@@ -269,17 +271,17 @@ export default function ActiveChatsPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <p className="font-medium truncate">
-                                {session.table?.name || 'Чат ресторана'}
+                                {session.table?.name || t.chatsSection.restaurantChat}
                               </p>
                               {session.table && (
                                 <Badge variant="outline" className="text-xs px-1">
-                                  Стол
+                                  {t.chatsSection.table}
                                 </Badge>
                               )}
                             </div>
                             <p className="text-sm text-muted-foreground truncate">
                               {session.messages?.[session.messages.length - 1]?.content ||
-                                'Нет сообщений'}
+                                t.chatsSection.noMessages}
                             </p>
                           </div>
                           {session.unreadCount && session.unreadCount > 0 && (
@@ -295,7 +297,7 @@ export default function ActiveChatsPage() {
                               : '—'}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {session.messageCount || 0} сообщ.
+                            {session.messageCount || 0} {t.chatsSection.messages}
                           </p>
                         </div>
                       </button>
@@ -320,14 +322,14 @@ export default function ActiveChatsPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <CardTitle className="text-base">
-                          {selectedSession.table?.name || 'Чат ресторана'}
+                          {selectedSession.table?.name || t.chatsSection.restaurantChat}
                         </CardTitle>
                         <Badge variant={isAiEnabled ? 'default' : 'secondary'} className="text-xs">
-                          {isAiEnabled ? 'AI' : 'Персонал'}
+                          {isAiEnabled ? t.chatsSection.ai : t.chatsSection.staff}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {selectedSession.messageCount || 0} сообщений
+                        {selectedSession.messageCount || 0} {t.chatsSection.messagesCount}
                       </p>
                     </div>
                   </div>
@@ -343,7 +345,7 @@ export default function ActiveChatsPage() {
                             <ExternalLink className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Открыть в отдельном окне</TooltipContent>
+                        <TooltipContent>{t.chatsSection.openInSeparateWindow}</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                     <Button variant="ghost" size="icon" onClick={() => closeMutation.mutate()}>
@@ -423,7 +425,7 @@ export default function ActiveChatsPage() {
                     </div>
                     <div className="flex gap-2">
                       <Input
-                        placeholder="Введите сообщение..."
+                        placeholder={t.chatsSection.typeMessage}
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSend()}
@@ -442,7 +444,7 @@ export default function ActiveChatsPage() {
             ) : (
               <CardContent className="flex flex-col items-center justify-center h-full text-muted-foreground">
                 <MessageSquare className="h-12 w-12 mb-4" />
-                <p>Выберите чат из списка</p>
+                <p>{t.chatsSection.selectChatFromList}</p>
               </CardContent>
             )}
           </Card>
@@ -450,15 +452,15 @@ export default function ActiveChatsPage() {
           {/* Info Panel */}
           <Card className="col-span-3">
             <CardHeader>
-              <CardTitle className="text-lg">Информация</CardTitle>
+              <CardTitle className="text-lg">{t.chatsSection.information}</CardTitle>
             </CardHeader>
             <CardContent>
               {selectedSession ? (
                 <div className="space-y-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Стол</p>
+                    <p className="text-sm text-muted-foreground">{t.chatsSection.table}</p>
                     <p className="font-medium">
-                      {selectedSession.table?.name || 'Общий чат'}
+                      {selectedSession.table?.name || t.chatsSection.generalChat}
                     </p>
                   </div>
 
@@ -466,7 +468,7 @@ export default function ActiveChatsPage() {
 
                   {/* Статус AI */}
                   <div>
-                    <p className="text-sm text-muted-foreground mb-2">Статус AI</p>
+                    <p className="text-sm text-muted-foreground mb-2">{t.chatsSection.aiStatus}</p>
                     <div
                       className={`p-3 rounded-lg ${
                         isAiEnabled
@@ -479,14 +481,14 @@ export default function ActiveChatsPage() {
                           <>
                             <Bot className="h-4 w-4 text-green-600" />
                             <span className="text-sm text-green-700 dark:text-green-400">
-                              AI отвечает
+                              {t.chatsSection.aiResponding}
                             </span>
                           </>
                         ) : (
                           <>
                             <Building2 className="h-4 w-4 text-yellow-600" />
                             <span className="text-sm text-yellow-700 dark:text-yellow-400">
-                              Персонал ведёт диалог
+                              {t.chatsSection.staffChatting}
                             </span>
                           </>
                         )}
@@ -500,7 +502,7 @@ export default function ActiveChatsPage() {
                         onClick={handleReturnToAi}
                       >
                         <Sparkles className="mr-2 h-4 w-4" />
-                        Вернуть AI
+                        {t.chatsSection.returnToAi}
                       </Button>
                     )}
                   </div>
@@ -508,7 +510,7 @@ export default function ActiveChatsPage() {
                   <Separator />
 
                   <div className="space-y-2">
-                    <p className="text-sm font-medium">Быстрые действия</p>
+                    <p className="text-sm font-medium">{t.chatsSection.quickActions}</p>
                     <Button
                       variant="outline"
                       size="sm"
@@ -516,11 +518,11 @@ export default function ActiveChatsPage() {
                       onClick={() => router.push('/dashboard/reservations/list')}
                     >
                       <CalendarPlus className="mr-2 h-4 w-4" />
-                      Создать бронирование
+                      {t.chatsSection.createReservation}
                     </Button>
                     <Button variant="outline" size="sm" className="w-full justify-start">
                       <Phone className="mr-2 h-4 w-4" />
-                      Позвонить
+                      {t.chatsSection.call}
                     </Button>
                     <Button
                       variant="outline"
@@ -529,13 +531,13 @@ export default function ActiveChatsPage() {
                       onClick={() => router.push(`/dashboard/chats/${selectedSession.id}`)}
                     >
                       <ExternalLink className="mr-2 h-4 w-4" />
-                      Открыть отдельно
+                      {t.chatsSection.openSeparately}
                     </Button>
                   </div>
                 </div>
               ) : (
                 <p className="text-muted-foreground text-sm">
-                  Выберите чат для просмотра информации
+                  {t.chatsSection.selectChatForInfo}
                 </p>
               )}
             </CardContent>

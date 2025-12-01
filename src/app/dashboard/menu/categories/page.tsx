@@ -48,16 +48,19 @@ import {
 import { categoryApi, dishApi } from '@/lib/api';
 import { useRestaurantStore } from '@/store/restaurant';
 import { RestaurantRequired } from '@/components/restaurant-required';
+import { useTranslation } from '@/i18n';
 import type { MenuCategory, Dish } from '@/types';
+import type { Translations } from '@/i18n';
 
 interface SortableCategoryItemProps {
   category: MenuCategory;
   dishCount: number;
   onEdit: (category: MenuCategory) => void;
   onDelete: (id: number) => void;
+  t: Translations;
 }
 
-function SortableCategoryItem({ category, dishCount, onEdit, onDelete }: SortableCategoryItemProps) {
+function SortableCategoryItem({ category, dishCount, onEdit, onDelete, t }: SortableCategoryItemProps) {
   const {
     attributes,
     listeners,
@@ -91,7 +94,7 @@ function SortableCategoryItem({ category, dishCount, onEdit, onDelete }: Sortabl
         <p className="font-medium">{category.name}</p>
       </div>
       <Badge variant="secondary">
-        {dishCount} блюд
+        {dishCount} {t.menuSection.dishesCount}
       </Badge>
       <div className="flex items-center gap-2">
         <Button
@@ -117,6 +120,7 @@ function SortableCategoryItem({ category, dishCount, onEdit, onDelete }: Sortabl
 export default function CategoriesPage() {
   const queryClient = useQueryClient();
   const { selectedRestaurant } = useRestaurantStore();
+  const { t } = useTranslation();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editCategory, setEditCategory] = useState<MenuCategory | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -164,12 +168,12 @@ export default function CategoriesPage() {
     mutationFn: (name: string) => categoryApi.create({ name, restaurant_id: selectedRestaurant!.id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories', selectedRestaurant?.id] });
-      toast.success('Категория создана');
+      toast.success(t.menuSection.categoryCreated);
       setIsCreateOpen(false);
       setNewCategoryName('');
     },
     onError: () => {
-      toast.error('Ошибка при создании категории');
+      toast.error(t.menuSection.categoryCreateError);
     },
   });
 
@@ -178,11 +182,11 @@ export default function CategoriesPage() {
       categoryApi.update(id, { name, restaurant_id: selectedRestaurant!.id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories', selectedRestaurant?.id] });
-      toast.success('Категория обновлена');
+      toast.success(t.menuSection.categoryUpdated);
       setEditCategory(null);
     },
     onError: () => {
-      toast.error('Ошибка при обновлении категории');
+      toast.error(t.menuSection.categoryUpdateError);
     },
   });
 
@@ -190,11 +194,11 @@ export default function CategoriesPage() {
     mutationFn: categoryApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories', selectedRestaurant?.id] });
-      toast.success('Категория удалена');
+      toast.success(t.menuSection.categoryDeleted);
       setDeleteId(null);
     },
     onError: () => {
-      toast.error('Ошибка при удалении категории');
+      toast.error(t.menuSection.categoryDeleteError);
     },
   });
 
@@ -208,10 +212,10 @@ export default function CategoriesPage() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories', selectedRestaurant?.id] });
-      toast.success('Порядок сохранён');
+      toast.success(t.menuSection.orderSaved);
     },
     onError: () => {
-      toast.error('Ошибка при сохранении порядка');
+      toast.error(t.menuSection.orderSaveError);
     },
   });
 
@@ -237,9 +241,9 @@ export default function CategoriesPage() {
   if (!selectedRestaurant) {
     return (
       <>
-        <Header breadcrumbs={[{ title: 'Дашборд', href: '/dashboard' }, { title: 'Меню' }, { title: 'Категории' }]} />
+        <Header breadcrumbs={[{ title: t.nav.dashboard, href: '/dashboard' }, { title: t.nav.menu }, { title: t.nav.categories }]} />
         <main className="flex-1 p-6">
-          <RestaurantRequired title="категориями меню" />
+          <RestaurantRequired title={t.menuSection.categories.toLowerCase()} />
         </main>
       </>
     );
@@ -247,7 +251,7 @@ export default function CategoriesPage() {
 
   const handleCreate = () => {
     if (!newCategoryName.trim()) {
-      toast.error('Введите название категории');
+      toast.error(t.menuSection.enterCategoryName);
       return;
     }
     createMutation.mutate(newCategoryName);
@@ -255,7 +259,7 @@ export default function CategoriesPage() {
 
   const handleUpdate = () => {
     if (!editCategory?.name.trim()) {
-      toast.error('Введите название категории');
+      toast.error(t.menuSection.enterCategoryName);
       return;
     }
     updateMutation.mutate({ id: editCategory.id, name: editCategory.name });
@@ -265,30 +269,30 @@ export default function CategoriesPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Меню' },
-          { title: 'Категории' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.menu },
+          { title: t.nav.categories },
         ]}
       />
       <main className="flex-1 space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Категории меню</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t.menuSection.menuCategories}</h1>
             <p className="text-muted-foreground">
-              Управляйте категориями блюд
+              {t.menuSection.manageCategories}
             </p>
           </div>
           <Button onClick={() => setIsCreateOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Добавить категорию
+            {t.menuSection.addCategory}
           </Button>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Все категории</CardTitle>
+            <CardTitle>{t.menuSection.allCategories}</CardTitle>
             <CardDescription>
-              Перетащите для изменения порядка отображения в меню
+              {t.menuSection.dragToReorderCategories}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -300,7 +304,7 @@ export default function CategoriesPage() {
               </div>
             ) : sortedCategories.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                Нет категорий. Создайте первую категорию.
+                {t.menuSection.noCategoriesYet}
               </div>
             ) : (
               <DndContext
@@ -320,6 +324,7 @@ export default function CategoriesPage() {
                         dishCount={getDishCount(category.id)}
                         onEdit={setEditCategory}
                         onDelete={setDeleteId}
+                        t={t}
                       />
                     ))}
                   </div>
@@ -333,14 +338,14 @@ export default function CategoriesPage() {
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Новая категория</DialogTitle>
+            <DialogTitle>{t.menuSection.newCategory}</DialogTitle>
             <DialogDescription>
-              Введите название для новой категории меню
+              {t.menuSection.newCategoryDesc}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Input
-              placeholder="Название категории"
+              placeholder={t.menuSection.categoryNamePlaceholder}
               value={newCategoryName}
               onChange={(e) => setNewCategoryName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
@@ -348,13 +353,13 @@ export default function CategoriesPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-              Отмена
+              {t.common.cancel}
             </Button>
             <Button onClick={handleCreate} disabled={createMutation.isPending}>
               {createMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Создать
+              {t.common.create}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -363,14 +368,14 @@ export default function CategoriesPage() {
       <Dialog open={!!editCategory} onOpenChange={() => setEditCategory(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Редактировать категорию</DialogTitle>
+            <DialogTitle>{t.menuSection.editCategoryTitle}</DialogTitle>
             <DialogDescription>
-              Измените название категории
+              {t.menuSection.editCategoryDesc}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Input
-              placeholder="Название категории"
+              placeholder={t.menuSection.categoryNamePlaceholder}
               value={editCategory?.name || ''}
               onChange={(e) =>
                 setEditCategory((prev) =>
@@ -382,13 +387,13 @@ export default function CategoriesPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditCategory(null)}>
-              Отмена
+              {t.common.cancel}
             </Button>
             <Button onClick={handleUpdate} disabled={updateMutation.isPending}>
               {updateMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Сохранить
+              {t.common.save}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -397,18 +402,18 @@ export default function CategoriesPage() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Удалить категорию?</AlertDialogTitle>
+            <AlertDialogTitle>{t.menuSection.deleteCategoryConfirm}</AlertDialogTitle>
             <AlertDialogDescription>
-              Это действие нельзя отменить. Категория будет удалена.
+              {t.menuSection.deleteCategoryWarning}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && deleteMutation.mutate(deleteId)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Удалить
+              {t.common.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

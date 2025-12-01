@@ -26,7 +26,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { restaurantApi, tableApi, reservationApi, chatApi } from '@/lib/api';
+import { restaurantApi, tableApi, reservationApi, chatApi, getImageUrl } from '@/lib/api';
 import type { Table, Reservation, ChatSession } from '@/types';
 
 const DAYS_OF_WEEK = [
@@ -265,7 +265,7 @@ export default function RestaurantDetailPage() {
               {restaurant.image_url && (
                 <div className="relative h-64 rounded-lg overflow-hidden bg-muted">
                   <img
-                    src={restaurant.image_url}
+                    src={getImageUrl(restaurant.image_url)}
                     alt={restaurant.name}
                     className="object-cover w-full h-full"
                   />

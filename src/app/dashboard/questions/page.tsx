@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Plus, Trash2, GripVertical, Loader2 } from 'lucide-react';
+import { useTranslation } from '@/i18n';
 import {
   DndContext,
   closestCenter,
@@ -60,9 +61,10 @@ import type { Question, Language } from '@/types';
 interface SortableQuestionItemProps {
   question: Question;
   onDelete: (id: number) => void;
+  allLanguagesText: string;
 }
 
-function SortableQuestionItem({ question, onDelete }: SortableQuestionItemProps) {
+function SortableQuestionItem({ question, onDelete, allLanguagesText }: SortableQuestionItemProps) {
   const {
     attributes,
     listeners,
@@ -96,7 +98,7 @@ function SortableQuestionItem({ question, onDelete }: SortableQuestionItemProps)
         <p className="font-medium">{question.text}</p>
         <div className="flex items-center gap-2 mt-1">
           <Badge variant="outline" className="text-xs">
-            {question.language?.name || 'Все языки'}
+            {question.language?.name || allLanguagesText}
           </Badge>
         </div>
       </div>
@@ -112,6 +114,7 @@ function SortableQuestionItem({ question, onDelete }: SortableQuestionItemProps)
 }
 
 export default function QuestionsPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -154,12 +157,12 @@ export default function QuestionsPage() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['questions'] });
-      toast.success('Вопрос добавлен');
+      toast.success(t.questionsSection.questionAdded);
       setIsCreateOpen(false);
       setFormData({ text: '', type: 'menu', languageId: '' });
     },
     onError: () => {
-      toast.error('Ошибка при добавлении вопроса');
+      toast.error(t.questionsSection.questionAddError);
     },
   });
 
@@ -167,11 +170,11 @@ export default function QuestionsPage() {
     mutationFn: (id: number) => questionApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['questions'] });
-      toast.success('Вопрос удалён');
+      toast.success(t.questionsSection.questionDeleted);
       setDeleteId(null);
     },
     onError: () => {
-      toast.error('Ошибка при удалении вопроса');
+      toast.error(t.questionsSection.questionDeleteError);
     },
   });
 
@@ -179,10 +182,10 @@ export default function QuestionsPage() {
     mutationFn: (questionIds: number[]) => questionApi.reorder({ questionIds }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['questions'] });
-      toast.success('Порядок сохранён');
+      toast.success(t.questionsSection.orderSaved);
     },
     onError: () => {
-      toast.error('Ошибка при сохранении порядка');
+      toast.error(t.questionsSection.orderSaveError);
     },
   });
 
@@ -233,7 +236,7 @@ export default function QuestionsPage() {
     if (questionsList.length === 0) {
       return (
         <div className="text-center py-10 text-muted-foreground">
-          <p>Нет вопросов в этой категории</p>
+          <p>{t.questionsSection.noQuestionsInCategory}</p>
           <Button
             variant="outline"
             className="mt-4"
@@ -243,7 +246,7 @@ export default function QuestionsPage() {
             }}
           >
             <Plus className="mr-2 h-4 w-4" />
-            Добавить вопрос
+            {t.questionsSection.addQuestion}
           </Button>
         </div>
       );
@@ -265,6 +268,7 @@ export default function QuestionsPage() {
                 key={question.id}
                 question={question}
                 onDelete={setDeleteId}
+                allLanguagesText={t.questionsSection.allLanguages}
               />
             ))}
           </div>
@@ -277,39 +281,39 @@ export default function QuestionsPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Вопросы' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.questions },
         ]}
       />
       <main className="flex-1 space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Быстрые вопросы</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t.questionsSection.title}</h1>
             <p className="text-muted-foreground">
-              Настройте вопросы, которые гости видят при начале чата
+              {t.questionsSection.subtitle}
             </p>
           </div>
           <Button onClick={() => setIsCreateOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Добавить вопрос
+            {t.questionsSection.addQuestion}
           </Button>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Вопросы по категориям</CardTitle>
+            <CardTitle>{t.questionsSection.questionsByCategory}</CardTitle>
             <CardDescription>
-              Перетащите вопросы для изменения порядка отображения
+              {t.questionsSection.dragToReorderDisplay}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="mb-4">
                 <TabsTrigger value="menu">
-                  Вопросы о меню ({menuQuestions.length})
+                  {t.questionsSection.menuQuestions} ({menuQuestions.length})
                 </TabsTrigger>
                 <TabsTrigger value="reservation">
-                  Вопросы о бронировании ({reservationQuestions.length})
+                  {t.questionsSection.reservationQuestions} ({reservationQuestions.length})
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="menu">
@@ -326,22 +330,22 @@ export default function QuestionsPage() {
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Добавить вопрос</DialogTitle>
+            <DialogTitle>{t.questionsSection.addQuestion}</DialogTitle>
             <DialogDescription>
-              Создайте новый быстрый вопрос для чата
+              {t.questionsSection.createNewQuestion}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Текст вопроса *</Label>
+              <Label>{t.questionsSection.questionText} *</Label>
               <Input
                 value={formData.text}
                 onChange={(e) => setFormData({ ...formData, text: e.target.value })}
-                placeholder="Какие у вас фирменные блюда?"
+                placeholder={t.questionsSection.questionTextPlaceholder}
               />
             </div>
             <div className="space-y-2">
-              <Label>Тип вопроса *</Label>
+              <Label>{t.questionsSection.questionType} *</Label>
               <Select
                 value={formData.type}
                 onValueChange={(value: 'menu' | 'reservation') =>
@@ -352,13 +356,13 @@ export default function QuestionsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="menu">О меню</SelectItem>
-                  <SelectItem value="reservation">О бронировании</SelectItem>
+                  <SelectItem value="menu">{t.questionsSection.aboutMenu}</SelectItem>
+                  <SelectItem value="reservation">{t.questionsSection.aboutReservation}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Язык</Label>
+              <Label>{t.questionsSection.language}</Label>
               <Select
                 value={formData.languageId}
                 onValueChange={(value) =>
@@ -366,7 +370,7 @@ export default function QuestionsPage() {
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Все языки" />
+                  <SelectValue placeholder={t.questionsSection.allLanguages} />
                 </SelectTrigger>
                 <SelectContent>
                   {languages?.map((lang: Language) => (
@@ -380,7 +384,7 @@ export default function QuestionsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-              Отмена
+              {t.common.cancel}
             </Button>
             <Button
               onClick={() => createMutation.mutate()}
@@ -389,7 +393,7 @@ export default function QuestionsPage() {
               {createMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Добавить
+              {t.common.add}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -398,18 +402,18 @@ export default function QuestionsPage() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Удалить вопрос?</AlertDialogTitle>
+            <AlertDialogTitle>{t.questionsSection.deleteConfirm}</AlertDialogTitle>
             <AlertDialogDescription>
-              Это действие нельзя отменить.
+              {t.questionsSection.deleteWarning}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && deleteMutation.mutate(deleteId)}
               className="bg-destructive text-destructive-foreground"
             >
-              Удалить
+              {t.common.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

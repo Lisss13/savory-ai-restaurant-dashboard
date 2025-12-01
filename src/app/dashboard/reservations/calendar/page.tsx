@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { reservationApi, tableApi } from '@/lib/api';
 import { useRestaurantStore } from '@/store/restaurant';
+import { useTranslation } from '@/i18n';
 import type { Reservation, Table } from '@/types';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -28,14 +29,8 @@ const STATUS_COLORS: Record<string, string> = {
   completed: 'bg-green-500',
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'Ожидает',
-  confirmed: 'Подтверждено',
-  cancelled: 'Отменено',
-  completed: 'Завершено',
-};
-
 export default function ReservationsCalendarPage() {
+  const { t } = useTranslation();
   const { selectedRestaurant } = useRestaurantStore();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -82,20 +77,27 @@ export default function ReservationsCalendarPage() {
   const nextWeek = () => setCurrentDate(addWeeks(currentDate, 1));
   const goToToday = () => setCurrentDate(new Date());
 
+  const STATUS_LABELS: Record<string, string> = {
+    pending: t.reservations.pending,
+    confirmed: t.reservations.confirmed,
+    cancelled: t.reservations.cancelled,
+    completed: t.reservations.completed,
+  };
+
   if (!selectedRestaurant) {
     return (
       <>
         <Header
           breadcrumbs={[
-            { title: 'Дашборд', href: '/dashboard' },
-            { title: 'Бронирования' },
-            { title: 'Календарь' },
+            { title: t.nav.dashboard, href: '/dashboard' },
+            { title: t.nav.reservations },
+            { title: t.nav.calendar },
           ]}
         />
         <main className="flex-1 p-6">
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
-              Выберите ресторан для просмотра календаря бронирований
+              {t.reservations.selectRestaurantForCalendar}
             </CardContent>
           </Card>
         </main>
@@ -107,31 +109,31 @@ export default function ReservationsCalendarPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Бронирования' },
-          { title: 'Календарь' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.reservations },
+          { title: t.nav.calendar },
         ]}
       />
       <main className="flex-1 space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Календарь бронирований</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t.reservations.calendarTitle}</h1>
             <p className="text-muted-foreground">
-              Визуальное расписание бронирований по столам
+              {t.reservations.calendarSubtitle}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Статус" />
+                <SelectValue placeholder={t.reservations.status} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Все статусы</SelectItem>
-                <SelectItem value="pending">Ожидает</SelectItem>
-                <SelectItem value="confirmed">Подтверждено</SelectItem>
-                <SelectItem value="completed">Завершено</SelectItem>
-                <SelectItem value="cancelled">Отменено</SelectItem>
-                <SelectItem value="no_show">Не явился</SelectItem>
+                <SelectItem value="all">{t.reservations.allStatuses}</SelectItem>
+                <SelectItem value="pending">{t.reservations.pending}</SelectItem>
+                <SelectItem value="confirmed">{t.reservations.confirmed}</SelectItem>
+                <SelectItem value="completed">{t.reservations.completed}</SelectItem>
+                <SelectItem value="cancelled">{t.reservations.cancelled}</SelectItem>
+                <SelectItem value="no_show">{t.reservations.noShow}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -152,7 +154,7 @@ export default function ReservationsCalendarPage() {
             </div>
             <Button variant="outline" onClick={goToToday}>
               <CalendarDays className="mr-2 h-4 w-4" />
-              Сегодня
+              {t.reservations.today}
             </Button>
           </CardHeader>
           <CardContent>
@@ -167,7 +169,7 @@ export default function ReservationsCalendarPage() {
                 <table className="w-full border-collapse">
                   <thead>
                     <tr>
-                      <th className="border p-2 bg-muted text-left min-w-[120px]">Стол</th>
+                      <th className="border p-2 bg-muted text-left min-w-[120px]">{t.reservations.table}</th>
                       {weekDays.map((day) => (
                         <th
                           key={day.toISOString()}
@@ -191,7 +193,7 @@ export default function ReservationsCalendarPage() {
                         <td className="border p-2 font-medium bg-muted/50">
                           {table.name}
                           <div className="text-xs text-muted-foreground">
-                            до {table.guestCount} чел.
+                            {t.reservations.upTo} {table.guestCount} {t.reservations.people}
                           </div>
                         </td>
                         {weekDays.map((day) => {
@@ -218,7 +220,7 @@ export default function ReservationsCalendarPage() {
                                     <div className="truncate">{reservation.customer_name}</div>
                                     <div className="flex items-center gap-1 opacity-80">
                                       <Users className="h-3 w-3" />
-                                      {reservation.guest_count} чел.
+                                      {reservation.guest_count} {t.reservations.people}
                                     </div>
                                   </div>
                                 ))}

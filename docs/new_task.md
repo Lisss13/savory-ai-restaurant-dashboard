@@ -1,0 +1,11 @@
+При переключении языка эти страницы не переводится исправю это: 
+- /dashboard/tables
+- /dashboard/reservations/calendar
+- /dashboard/reservations/list
+- /dashboard/chats/active
+- /dashboard/chats/history
+- /dashboard/questions
+- /dashboard/qr-codes
+- /dashboard/analytics/overview
+- /dashboard/analytics/reservations
+- /dashboard/analytics/chats

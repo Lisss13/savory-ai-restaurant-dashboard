@@ -31,6 +31,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { tableApi, reservationApi } from '@/lib/api';
 import { useRestaurantStore } from '@/store/restaurant';
+import { useTranslation } from '@/i18n';
 import type { Table, Reservation } from '@/types';
 
 interface TableFormData {
@@ -41,6 +42,7 @@ interface TableFormData {
 export default function TablesPage() {
   const queryClient = useQueryClient();
   const { selectedRestaurant } = useRestaurantStore();
+  const { t } = useTranslation();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editTable, setEditTable] = useState<Table | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -87,14 +89,14 @@ export default function TablesPage() {
       .sort((a: Reservation, b: Reservation) => a.start_time.localeCompare(b.start_time))[0];
 
     if (currentReservation) {
-      return { status: 'occupied', color: 'destructive', text: 'Занят' };
+      return { status: 'occupied', color: 'destructive', text: t.tablesSection.occupied };
     }
 
     if (nextReservation) {
-      return { status: 'reserved', color: 'warning', text: `Бронь в ${nextReservation.start_time}` };
+      return { status: 'reserved', color: 'warning', text: `${t.tablesSection.reservationAt} ${nextReservation.start_time}` };
     }
 
-    return { status: 'free', color: 'success', text: 'Свободен' };
+    return { status: 'free', color: 'success', text: t.tablesSection.available };
   };
 
   const createMutation = useMutation({
@@ -105,12 +107,12 @@ export default function TablesPage() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tables'] });
-      toast.success('Стол создан');
+      toast.success(t.tablesSection.tableCreated);
       setIsCreateOpen(false);
       setFormData({ name: '', guestCount: 2 });
     },
     onError: () => {
-      toast.error('Ошибка при создании стола');
+      toast.error(t.tablesSection.tableCreateError);
     },
   });
 
@@ -122,11 +124,11 @@ export default function TablesPage() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tables'] });
-      toast.success('Стол обновлён');
+      toast.success(t.tablesSection.tableUpdated);
       setEditTable(null);
     },
     onError: () => {
-      toast.error('Ошибка при обновлении стола');
+      toast.error(t.tablesSection.tableUpdateError);
     },
   });
 
@@ -134,17 +136,17 @@ export default function TablesPage() {
     mutationFn: tableApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tables'] });
-      toast.success('Стол удалён');
+      toast.success(t.tablesSection.tableDeleted);
       setDeleteId(null);
     },
     onError: () => {
-      toast.error('Ошибка при удалении стола');
+      toast.error(t.tablesSection.tableDeleteError);
     },
   });
 
   const handleCreate = () => {
     if (!formData.name.trim()) {
-      toast.error('Введите название стола');
+      toast.error(t.tablesSection.enterTableName);
       return;
     }
     createMutation.mutate(formData);
@@ -152,7 +154,7 @@ export default function TablesPage() {
 
   const handleUpdate = () => {
     if (!editTable || !formData.name.trim()) {
-      toast.error('Введите название стола');
+      toast.error(t.tablesSection.enterTableName);
       return;
     }
     updateMutation.mutate({ id: editTable.id, form: formData });
@@ -166,13 +168,13 @@ export default function TablesPage() {
   if (!selectedRestaurant) {
     return (
       <>
-        <Header breadcrumbs={[{ title: 'Дашборд', href: '/dashboard' }, { title: 'Столы' }]} />
+        <Header breadcrumbs={[{ title: t.nav.dashboard, href: '/dashboard' }, { title: t.nav.tables }]} />
         <main className="flex-1 p-6">
           <Card className="border-dashed">
             <CardContent className="flex flex-col items-center justify-center py-10">
-              <h3 className="text-lg font-semibold mb-2">Выберите ресторан</h3>
+              <h3 className="text-lg font-semibold mb-2">{t.tablesSection.selectRestaurant}</h3>
               <p className="text-muted-foreground text-center">
-                Для управления столами необходимо выбрать ресторан
+                {t.tablesSection.selectRestaurantForTables}
               </p>
             </CardContent>
           </Card>
@@ -185,21 +187,21 @@ export default function TablesPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Столы' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.tables },
         ]}
       />
       <main className="flex-1 space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Столы</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t.tablesSection.title}</h1>
             <p className="text-muted-foreground">
-              Управляйте столами ресторана {selectedRestaurant.name}
+              {t.tablesSection.manageTables} {selectedRestaurant.name}
             </p>
           </div>
           <Button onClick={() => setIsCreateOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Добавить стол
+            {t.tablesSection.addTable}
           </Button>
         </div>
 
@@ -212,13 +214,13 @@ export default function TablesPage() {
         ) : tables?.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="flex flex-col items-center justify-center py-10">
-              <h3 className="text-lg font-semibold mb-2">Нет столов</h3>
+              <h3 className="text-lg font-semibold mb-2">{t.tablesSection.noTables}</h3>
               <p className="text-muted-foreground text-center mb-4">
-                Добавьте столы для управления бронированиями
+                {t.tablesSection.addTablesForReservations}
               </p>
               <Button onClick={() => setIsCreateOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
-                Добавить стол
+                {t.tablesSection.addTable}
               </Button>
             </CardContent>
           </Card>
@@ -245,7 +247,7 @@ export default function TablesPage() {
                     </div>
                     <CardDescription className="flex items-center gap-1">
                       <Users className="h-4 w-4" />
-                      {table.guestCount} мест
+                      {table.guestCount} {t.tablesSection.seats}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -257,7 +259,7 @@ export default function TablesPage() {
                         onClick={() => openEditDialog(table)}
                       >
                         <Pencil className="mr-2 h-4 w-4" />
-                        Изменить
+                        {t.tablesSection.edit}
                       </Button>
                       <Button
                         variant="outline"
@@ -278,17 +280,17 @@ export default function TablesPage() {
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Новый стол</DialogTitle>
+            <DialogTitle>{t.tablesSection.newTable}</DialogTitle>
             <DialogDescription>
-              Добавьте новый стол в ресторан
+              {t.tablesSection.addNewTable}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Название</Label>
+              <Label htmlFor="name">{t.tablesSection.tableName}</Label>
               <Input
                 id="name"
-                placeholder="Столик №1"
+                placeholder={t.tablesSection.tablePlaceholder}
                 value={formData.name}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, name: e.target.value }))
@@ -296,7 +298,7 @@ export default function TablesPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="guestCount">Вместимость</Label>
+              <Label htmlFor="guestCount">{t.tablesSection.capacity}</Label>
               <Input
                 id="guestCount"
                 type="number"
@@ -313,13 +315,13 @@ export default function TablesPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-              Отмена
+              {t.common.cancel}
             </Button>
             <Button onClick={handleCreate} disabled={createMutation.isPending}>
               {createMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Создать
+              {t.common.create}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -328,14 +330,14 @@ export default function TablesPage() {
       <Dialog open={!!editTable} onOpenChange={() => setEditTable(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Редактировать стол</DialogTitle>
+            <DialogTitle>{t.tablesSection.editTable}</DialogTitle>
             <DialogDescription>
-              Измените параметры стола
+              {t.tablesSection.editTableParams}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-name">Название</Label>
+              <Label htmlFor="edit-name">{t.tablesSection.tableName}</Label>
               <Input
                 id="edit-name"
                 value={formData.name}
@@ -345,7 +347,7 @@ export default function TablesPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-guestCount">Вместимость</Label>
+              <Label htmlFor="edit-guestCount">{t.tablesSection.capacity}</Label>
               <Input
                 id="edit-guestCount"
                 type="number"
@@ -362,13 +364,13 @@ export default function TablesPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditTable(null)}>
-              Отмена
+              {t.common.cancel}
             </Button>
             <Button onClick={handleUpdate} disabled={updateMutation.isPending}>
               {updateMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Сохранить
+              {t.common.save}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -377,18 +379,18 @@ export default function TablesPage() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Удалить стол?</AlertDialogTitle>
+            <AlertDialogTitle>{t.tablesSection.deleteTableConfirm}</AlertDialogTitle>
             <AlertDialogDescription>
-              Это действие нельзя отменить. Все бронирования этого стола будут удалены.
+              {t.tablesSection.deleteTableWarning}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && deleteMutation.mutate(deleteId)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Удалить
+              {t.common.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

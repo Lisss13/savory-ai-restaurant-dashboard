@@ -12,6 +12,8 @@ import {
   Trash2,
   Star,
   Filter,
+  FolderOpen,
+  UtensilsCrossed,
 } from 'lucide-react';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
@@ -53,11 +55,13 @@ import {
 import { dishApi, categoryApi, getImageUrl } from '@/lib/api';
 import { useRestaurantStore } from '@/store/restaurant';
 import { RestaurantRequired } from '@/components/restaurant-required';
+import { useTranslation } from '@/i18n';
 import type { Dish, MenuCategory } from '@/types';
 
 export default function DishesPage() {
   const queryClient = useQueryClient();
   const { selectedRestaurant } = useRestaurantStore();
+  const { t, language } = useTranslation();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -72,12 +76,12 @@ export default function DishesPage() {
     enabled: !!selectedRestaurant,
   });
 
-  const { data: categories } = useQuery({
+  const { data: categories, isLoading: categoriesLoading, isSuccess: categoriesLoaded } = useQuery({
     queryKey: ['categories', selectedRestaurant?.id],
     queryFn: async () => {
       if (!selectedRestaurant) return [];
       const response = await categoryApi.getByRestaurant(selectedRestaurant.id);
-      return response.data.categories;
+      return response.data.categories || [];
     },
     enabled: !!selectedRestaurant,
   });
@@ -86,11 +90,11 @@ export default function DishesPage() {
     mutationFn: dishApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dishes', selectedRestaurant?.id] });
-      toast.success('Блюдо удалено');
+      toast.success(t.menuSection.dishDeleted);
       setDeleteId(null);
     },
     onError: () => {
-      toast.error('Ошибка при удалении блюда');
+      toast.error(t.menuSection.dishDeleteError);
     },
   });
 
@@ -98,19 +102,49 @@ export default function DishesPage() {
     mutationFn: dishApi.setDishOfDay,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dishes', selectedRestaurant?.id] });
-      toast.success('Блюдо дня обновлено');
+      toast.success(t.menuSection.dishOfDayUpdated);
     },
     onError: () => {
-      toast.error('Ошибка при установке блюда дня');
+      toast.error(t.menuSection.dishOfDayError);
     },
   });
 
   if (!selectedRestaurant) {
     return (
       <>
-        <Header breadcrumbs={[{ title: 'Дашборд', href: '/dashboard' }, { title: 'Меню' }, { title: 'Блюда' }]} />
+        <Header breadcrumbs={[{ title: t.nav.dashboard, href: '/dashboard' }, { title: t.nav.menu }, { title: t.nav.dishes }]} />
         <main className="flex-1 p-6">
-          <RestaurantRequired title="блюдами" />
+          <RestaurantRequired title={t.menuSection.dishes.toLowerCase()} />
+        </main>
+      </>
+    );
+  }
+
+  // Show message if no categories exist
+  const hasNoCategories = categoriesLoaded && (!categories || categories.length === 0);
+
+  if (hasNoCategories) {
+    return (
+      <>
+        <Header breadcrumbs={[{ title: t.nav.dashboard, href: '/dashboard' }, { title: t.nav.menu }, { title: t.nav.dishes }]} />
+        <main className="flex-1 p-6">
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <div className="rounded-full bg-muted p-4 mb-4">
+                <FolderOpen className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">{t.menuSection.noCategories}</h3>
+              <p className="text-muted-foreground text-center mb-6 max-w-md">
+                {t.menuSection.createCategoryFirst}
+              </p>
+              <Button asChild>
+                <Link href="/dashboard/menu/categories">
+                  <Plus className="mr-2 h-4 w-4" />
+                  {t.menuSection.createCategory}
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
         </main>
       </>
     );
@@ -124,9 +158,9 @@ export default function DishesPage() {
   });
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('ru-RU', {
+    return new Intl.NumberFormat(language === 'ru' ? 'ru-RU' : 'en-US', {
       style: 'currency',
-      currency: 'RUB',
+      currency: language === 'ru' ? 'RUB' : 'USD',
       minimumFractionDigits: 0,
     }).format(price);
   };
@@ -135,23 +169,23 @@ export default function DishesPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Меню' },
-          { title: 'Блюда' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.menu },
+          { title: t.nav.dishes },
         ]}
       />
       <main className="flex-1 space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Блюда</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t.menuSection.dishes}</h1>
             <p className="text-muted-foreground">
-              Управляйте блюдами вашего меню
+              {t.menuSection.manageDishes}
             </p>
           </div>
           <Button asChild>
             <Link href="/dashboard/menu/dishes/new">
               <Plus className="mr-2 h-4 w-4" />
-              Добавить блюдо
+              {t.menuSection.addDish}
             </Link>
           </Button>
         </div>
@@ -162,7 +196,7 @@ export default function DishesPage() {
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Поиск блюд..."
+                  placeholder={t.menuSection.searchDishes}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-9"
@@ -171,10 +205,10 @@ export default function DishesPage() {
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="w-48">
                   <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Все категории" />
+                  <SelectValue placeholder={t.menuSection.allCategories} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Все категории</SelectItem>
+                  <SelectItem value="all">{t.menuSection.allCategories}</SelectItem>
                   {categories?.map((category: MenuCategory) => (
                     <SelectItem key={category.id} value={category.id.toString()}>
                       {category.name}
@@ -191,20 +225,36 @@ export default function DishesPage() {
                 ))}
               </div>
             ) : filteredDishes?.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                {search || categoryFilter !== 'all'
-                  ? 'Блюда не найдены'
-                  : 'Нет блюд. Добавьте первое блюдо.'}
-              </div>
+              search || categoryFilter !== 'all' ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  {t.menuSection.dishesNotFound}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="rounded-full bg-muted p-4 mb-4">
+                    <UtensilsCrossed className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">{t.menuSection.noDishes}</h3>
+                  <p className="text-muted-foreground text-center mb-6 max-w-md">
+                    {t.menuSection.addFirstDish}
+                  </p>
+                  <Button asChild>
+                    <Link href="/dashboard/menu/dishes/new">
+                      <Plus className="mr-2 h-4 w-4" />
+                      {t.menuSection.addDish}
+                    </Link>
+                  </Button>
+                </div>
+              )
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-16">Фото</TableHead>
-                    <TableHead>Название</TableHead>
-                    <TableHead>Категория</TableHead>
-                    <TableHead className="text-right">Цена</TableHead>
-                    <TableHead className="w-24 text-center">Блюдо дня</TableHead>
+                    <TableHead className="w-16">{t.menuSection.photo}</TableHead>
+                    <TableHead>{t.menuSection.name}</TableHead>
+                    <TableHead>{t.menuSection.category}</TableHead>
+                    <TableHead className="text-right">{t.menuSection.price}</TableHead>
+                    <TableHead className="w-24 text-center">{t.menuSection.dishOfDay}</TableHead>
                     <TableHead className="w-16"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -220,7 +270,7 @@ export default function DishesPage() {
                           />
                         ) : (
                           <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center text-muted-foreground text-xs">
-                            Нет
+                            {t.menuSection.noPhoto}
                           </div>
                         )}
                       </TableCell>
@@ -236,7 +286,7 @@ export default function DishesPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {dish.menuCategory?.name || 'Без категории'}
+                          {dish.menuCategory?.name || t.menuSection.noCategory}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-medium">
@@ -268,7 +318,7 @@ export default function DishesPage() {
                             <DropdownMenuItem asChild>
                               <Link href={`/dashboard/menu/dishes/${dish.id}`}>
                                 <Pencil className="mr-2 h-4 w-4" />
-                                Редактировать
+                                {t.common.edit}
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem
@@ -276,7 +326,7 @@ export default function DishesPage() {
                               onClick={() => setDeleteId(dish.id)}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
-                              Удалить
+                              {t.common.delete}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -293,18 +343,18 @@ export default function DishesPage() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Удалить блюдо?</AlertDialogTitle>
+            <AlertDialogTitle>{t.menuSection.deleteDishConfirm}</AlertDialogTitle>
             <AlertDialogDescription>
-              Это действие нельзя отменить. Блюдо будет удалено из меню.
+              {t.menuSection.deleteDishWarning}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && deleteMutation.mutate(deleteId)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Удалить
+              {t.common.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -248,15 +248,28 @@ export default function RestaurantsPage() {
                       </div>
                     )}
                   </div>
-                  <Button
-                    variant="outline"
-                    className="w-full mt-4"
-                    onClick={() => handleSelect(restaurant)}
-                  >
-                    {selectedRestaurant?.id === restaurant.id
-                      ? t.restaurants.selected
-                      : t.restaurants.select}
-                  </Button>
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      asChild
+                    >
+                      <Link href={`/dashboard/restaurants/${restaurant.id}`}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        {t.restaurants.view}
+                      </Link>
+                    </Button>
+                    <Button
+                      variant={selectedRestaurant?.id === restaurant.id ? "default" : "outline"}
+                      className="flex-1"
+                      onClick={() => handleSelect(restaurant)}
+                    >
+                      {selectedRestaurant?.id === restaurant.id && <Check className="mr-2 h-4 w-4" />}
+                      {selectedRestaurant?.id === restaurant.id
+                        ? t.restaurants.selected
+                        : t.restaurants.select}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}

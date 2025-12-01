@@ -12,6 +12,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { useTranslation } from '@/i18n';
 import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -35,6 +36,7 @@ import { useRestaurantStore } from '@/store/restaurant';
 import type { Reservation } from '@/types';
 
 export default function ReservationsAnalyticsPage() {
+  const { t } = useTranslation();
   const { selectedRestaurant } = useRestaurantStore();
   const [period, setPeriod] = useState('30');
 
@@ -67,7 +69,15 @@ export default function ReservationsAnalyticsPage() {
     .sort((a, b) => a.time.localeCompare(b.time));
 
   // Day of week distribution
-  const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+  const dayNames = [
+    t.restaurants.sunday.substring(0, 2),
+    t.restaurants.monday.substring(0, 2),
+    t.restaurants.tuesday.substring(0, 2),
+    t.restaurants.wednesday.substring(0, 2),
+    t.restaurants.thursday.substring(0, 2),
+    t.restaurants.friday.substring(0, 2),
+    t.restaurants.saturday.substring(0, 2),
+  ];
   const dayDistribution = reservations?.reduce((acc: Record<number, number>, r: Reservation) => {
     const day = new Date(r.reservation_date).getDay();
     acc[day] = (acc[day] || 0) + 1;
@@ -83,7 +93,7 @@ export default function ReservationsAnalyticsPage() {
   const guestStats = reservations?.reduce((acc: Record<string, { name: string; phone: string; visits: number }>, r: Reservation) => {
     const key = r.customer_phone || '';
     if (!acc[key]) {
-      acc[key] = { name: r.customer_name || 'Гость', phone: r.customer_phone || '', visits: 0 };
+      acc[key] = { name: r.customer_name || t.analyticsSection.guest, phone: r.customer_phone || '', visits: 0 };
     }
     acc[key].visits++;
     return acc;
@@ -98,15 +108,15 @@ export default function ReservationsAnalyticsPage() {
       <>
         <Header
           breadcrumbs={[
-            { title: 'Дашборд', href: '/dashboard' },
-            { title: 'Аналитика' },
-            { title: 'Бронирования' },
+            { title: t.nav.dashboard, href: '/dashboard' },
+            { title: t.nav.analytics },
+            { title: t.analyticsSection.reservations },
           ]}
         />
         <main className="flex-1 p-6">
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
-              Выберите ресторан для просмотра аналитики
+              {t.analyticsSection.selectRestaurantForAnalytics}
             </CardContent>
           </Card>
         </main>
@@ -118,27 +128,27 @@ export default function ReservationsAnalyticsPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Аналитика' },
-          { title: 'Бронирования' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.analytics },
+          { title: t.analyticsSection.reservations },
         ]}
       />
       <main className="flex-1 space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Аналитика бронирований</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t.analyticsSection.reservationsAnalytics}</h1>
             <p className="text-muted-foreground">
-              Детальная статистика по бронированиям
+              {t.analyticsSection.detailedReservationStats}
             </p>
           </div>
           <Select value={period} onValueChange={setPeriod}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Период" />
+              <SelectValue placeholder={t.analyticsSection.period} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="7">Последние 7 дней</SelectItem>
-              <SelectItem value="30">Последние 30 дней</SelectItem>
-              <SelectItem value="90">Последние 90 дней</SelectItem>
+              <SelectItem value="7">{t.analyticsSection.last7Days}</SelectItem>
+              <SelectItem value="30">{t.analyticsSection.last30Days}</SelectItem>
+              <SelectItem value="90">{t.analyticsSection.last90Days}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -147,7 +157,7 @@ export default function ReservationsAnalyticsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Всего бронирований
+                {t.analyticsSection.totalReservations}
               </CardTitle>
               <CalendarDays className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -162,7 +172,7 @@ export default function ReservationsAnalyticsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Среднее кол-во гостей
+                {t.analyticsSection.avgGuestCount}
               </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -177,7 +187,7 @@ export default function ReservationsAnalyticsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Пиковое время
+                {t.analyticsSection.peakTime}
               </CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -196,7 +206,7 @@ export default function ReservationsAnalyticsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Конверсия
+                {t.analyticsSection.conversion}
               </CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -213,9 +223,9 @@ export default function ReservationsAnalyticsPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Распределение по времени</CardTitle>
+              <CardTitle>{t.analyticsSection.timeDistribution}</CardTitle>
               <CardDescription>
-                Популярные часы для бронирований
+                {t.analyticsSection.popularReservationHours}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -228,7 +238,7 @@ export default function ReservationsAnalyticsPage() {
                     <XAxis dataKey="time" />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="count" fill="#8884d8" name="Бронирования" />
+                    <Bar dataKey="count" fill="#8884d8" name={t.analyticsSection.reservations} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -237,9 +247,9 @@ export default function ReservationsAnalyticsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Загруженность по дням недели</CardTitle>
+              <CardTitle>{t.analyticsSection.weekDayLoad}</CardTitle>
               <CardDescription>
-                Популярные дни для посещения
+                {t.analyticsSection.popularVisitDays}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -252,7 +262,7 @@ export default function ReservationsAnalyticsPage() {
                     <XAxis dataKey="day" />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="count" fill="#82ca9d" name="Бронирования" />
+                    <Bar dataKey="count" fill="#82ca9d" name={t.analyticsSection.reservations} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -262,9 +272,9 @@ export default function ReservationsAnalyticsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Топ гостей</CardTitle>
+            <CardTitle>{t.analyticsSection.topGuests}</CardTitle>
             <CardDescription>
-              Постоянные посетители
+              {t.analyticsSection.regularVisitors}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -276,15 +286,15 @@ export default function ReservationsAnalyticsPage() {
               </div>
             ) : topGuests.length === 0 ? (
               <div className="text-center py-10 text-muted-foreground">
-                Нет данных о гостях
+                {t.analyticsSection.noGuestData}
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Гость</TableHead>
-                    <TableHead>Телефон</TableHead>
-                    <TableHead className="text-right">Визитов</TableHead>
+                    <TableHead>{t.analyticsSection.guest}</TableHead>
+                    <TableHead>{t.analyticsSection.phone}</TableHead>
+                    <TableHead className="text-right">{t.analyticsSection.visits}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

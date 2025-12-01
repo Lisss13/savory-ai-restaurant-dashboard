@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { MessageSquare, Search, Calendar, Eye, Clock, User, Bot, Building2 } from 'lucide-react';
+import { useTranslation } from '@/i18n';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +39,7 @@ import { useRestaurantStore } from '@/store/restaurant';
 import type { ChatSession } from '@/types';
 
 export default function ChatHistoryPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { selectedRestaurant } = useRestaurantStore();
   const [search, setSearch] = useState('');
@@ -68,15 +70,15 @@ export default function ChatHistoryPage() {
       <>
         <Header
           breadcrumbs={[
-            { title: 'Дашборд', href: '/dashboard' },
-            { title: 'Чаты' },
-            { title: 'История' },
+            { title: t.nav.dashboard, href: '/dashboard' },
+            { title: t.nav.chats },
+            { title: t.nav.history },
           ]}
         />
         <main className="flex-1 p-6">
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
-              Выберите ресторан для просмотра истории чатов
+              {t.chatsSection.selectRestaurantToView}
             </CardContent>
           </Card>
         </main>
@@ -88,16 +90,16 @@ export default function ChatHistoryPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Чаты' },
-          { title: 'История' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.chats },
+          { title: t.nav.history },
         ]}
       />
       <main className="flex-1 space-y-6 p-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">История чатов</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t.chatsSection.chatHistory}</h1>
           <p className="text-muted-foreground">
-            Архив завершённых чат-сессий
+            {t.chatsSection.archiveOfChatSessions}
           </p>
         </div>
 
@@ -105,16 +107,16 @@ export default function ChatHistoryPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Завершённые чаты</CardTitle>
+                <CardTitle>{t.chatsSection.completedChats}</CardTitle>
                 <CardDescription>
-                  Всего: {filteredSessions.length}
+                  {t.chatsSection.total}: {filteredSessions.length}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 <div className="relative">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Поиск по ID..."
+                    placeholder={t.chatsSection.searchById}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="pl-8 w-[200px]"
@@ -122,12 +124,12 @@ export default function ChatHistoryPage() {
                 </div>
                 <Select value={chatType} onValueChange={setChatType}>
                   <SelectTrigger className="w-[150px]">
-                    <SelectValue placeholder="Тип чата" />
+                    <SelectValue placeholder={t.chatsSection.chatType} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Все чаты</SelectItem>
-                    <SelectItem value="table">Столики</SelectItem>
-                    <SelectItem value="restaurant">Ресторан</SelectItem>
+                    <SelectItem value="all">{t.chatsSection.allChats}</SelectItem>
+                    <SelectItem value="table">{t.chatsSection.tables}</SelectItem>
+                    <SelectItem value="restaurant">{t.chatsSection.restaurant}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -143,18 +145,18 @@ export default function ChatHistoryPage() {
             ) : filteredSessions.length === 0 ? (
               <div className="text-center py-10 text-muted-foreground">
                 <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Нет завершённых чатов</p>
+                <p>{t.chatsSection.noCompletedChats}</p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>ID</TableHead>
-                    <TableHead>Тип</TableHead>
-                    <TableHead>Столик</TableHead>
-                    <TableHead>Начат</TableHead>
-                    <TableHead>Завершён</TableHead>
-                    <TableHead>Сообщений</TableHead>
+                    <TableHead>{t.chatsSection.type}</TableHead>
+                    <TableHead>{t.chatsSection.table}</TableHead>
+                    <TableHead>{t.chatsSection.started}</TableHead>
+                    <TableHead>{t.chatsSection.completed}</TableHead>
+                    <TableHead>{t.chatsSection.messagesCount}</TableHead>
                     <TableHead className="w-[100px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -164,7 +166,7 @@ export default function ChatHistoryPage() {
                       <TableCell className="font-medium">#{session.id}</TableCell>
                       <TableCell>
                         <Badge variant={session.table ? 'default' : 'secondary'}>
-                          {session.table ? 'Столик' : 'Ресторан'}
+                          {session.table ? t.chatsSection.table : t.chatsSection.restaurant}
                         </Badge>
                       </TableCell>
                       <TableCell>{session.table?.name || '—'}</TableCell>
@@ -193,11 +195,11 @@ export default function ChatHistoryPage() {
                                 onClick={() => router.push(`/dashboard/chats/${session.id}`)}
                               >
                                 <Eye className="h-4 w-4 mr-1" />
-                                Просмотр
+                                {t.chatsSection.view}
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>Открыть историю чата</p>
+                              <p>{t.chatsSection.openChatHistory}</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>

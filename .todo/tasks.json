@@ -399,7 +399,7 @@
     "tags": [],
     "title": "вместо кнопки селек переход на выбор ресторана ",
     "description": "",
-    "status": "TODO",
+    "status": "DONE",
     "date": {
       "date": {
         "year": 2025,
@@ -411,6 +411,19 @@
         "minute": 43,
         "second": 31,
         "nano": 573355000
+      }
+    },
+    "finishDate": {
+      "date": {
+        "year": 2025,
+        "month": 12,
+        "day": 1
+      },
+      "time": {
+        "hour": 13,
+        "minute": 44,
+        "second": 9,
+        "nano": 678097000
       }
     },
     "isImported": false
@@ -491,7 +504,7 @@
     "tags": [],
     "title": "категории и бл/да обшие по всем ресторанам",
     "description": "",
-    "status": "IN_PROGRESS",
+    "status": "DONE",
     "date": {
       "date": {
         "year": 2025,
@@ -503,6 +516,19 @@
         "minute": 42,
         "second": 39,
         "nano": 676177000
+      }
+    },
+    "finishDate": {
+      "date": {
+        "year": 2025,
+        "month": 12,
+        "day": 1
+      },
+      "time": {
+        "hour": 13,
+        "minute": 43,
+        "second": 39,
+        "nano": 253703000
       }
     },
     "isImported": false
