@@ -29,8 +29,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { dishApi, categoryApi, uploadApi, getImageUrl } from '@/lib/api';
+import { dishApi, categoryApi, getImageUrl } from '@/lib/api';
 import { useRestaurantStore } from '@/store/restaurant';
+import { useImageUpload } from '@/hooks/use-image-upload';
 import { NutritionInput } from '@/components/nutrition';
 import type { MenuCategory, NutritionData } from '@/types';
 
@@ -76,7 +77,6 @@ export default function NewDishPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { selectedRestaurant } = useRestaurantStore();
-  const [isUploading, setIsUploading] = useState(false);
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
 
   const [nutrition, setNutrition] = useState<NutritionData>({
@@ -109,6 +109,10 @@ export default function NewDishPage() {
       control: form.control,
       name: 'ingredients',
     });
+
+  const { isUploading, handleImageUpload } = useImageUpload({
+    onSuccess: (url) => form.setValue('image', url),
+  });
 
   const { data: categories } = useQuery({
     queryKey: ['categories', selectedRestaurant?.id],
@@ -145,22 +149,6 @@ export default function NewDishPage() {
       toast.error('Ошибка при создании блюда');
     },
   });
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    try {
-      const response = await uploadApi.uploadImage(file);
-      form.setValue('image', response.data.url);
-      toast.success('Изображение загружено');
-    } catch {
-      toast.error('Ошибка загрузки изображения');
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   const toggleAllergen = (allergen: string) => {
     setSelectedAllergens((prev) =>

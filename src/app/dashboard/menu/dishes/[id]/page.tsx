@@ -30,8 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { dishApi, categoryApi, uploadApi, getImageUrl } from '@/lib/api';
+import { dishApi, categoryApi, getImageUrl } from '@/lib/api';
 import { useRestaurantStore } from '@/store/restaurant';
+import { useImageUpload } from '@/hooks/use-image-upload';
 import { NutritionInput } from '@/components/nutrition';
 import type { MenuCategory, NutritionData } from '@/types';
 
@@ -73,7 +74,6 @@ export default function EditDishPage() {
   const queryClient = useQueryClient();
   const { selectedRestaurant } = useRestaurantStore();
   const dishId = Number(params.id);
-  const [isUploading, setIsUploading] = useState(false);
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
   const [nutrition, setNutrition] = useState<NutritionData>({
     calories: 0,
@@ -91,14 +91,16 @@ export default function EditDishPage() {
     enabled: !!dishId,
   });
 
+  const dishRestaurantId = dish?.restaurant?.id || selectedRestaurant?.id;
+
   const { data: categories } = useQuery({
-    queryKey: ['categories', selectedRestaurant?.id],
+    queryKey: ['categories', dishRestaurantId],
     queryFn: async () => {
-      if (!selectedRestaurant) return [];
-      const response = await categoryApi.getByRestaurant(selectedRestaurant.id);
+      if (!dishRestaurantId) return [];
+      const response = await categoryApi.getByRestaurant(dishRestaurantId);
       return response.data.categories;
     },
-    enabled: !!selectedRestaurant,
+    enabled: !!dishRestaurantId,
   });
 
   const form = useForm<DishFormValues>({
@@ -124,8 +126,12 @@ export default function EditDishPage() {
       name: 'ingredients',
     });
 
+  const { isUploading, handleImageUpload } = useImageUpload({
+    onSuccess: (url) => form.setValue('image', url),
+  });
+
   useEffect(() => {
-    if (dish) {
+    if (dish && categories?.length) {
       form.reset({
         menuCategoryId: dish.menuCategory?.id?.toString() || '',
         name: dish.name,
@@ -141,6 +147,7 @@ export default function EditDishPage() {
           : [{ name: '', quantity: 0 }],
         isDishOfDay: dish.isDishOfDay || false,
       });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNutrition({
         calories: dish.calories || 0,
         proteins: dish.proteins || 0,
@@ -149,12 +156,12 @@ export default function EditDishPage() {
       });
       setSelectedAllergens(dish.allergens?.map((a) => a.name) || []);
     }
-  }, [dish, form]);
+  }, [dish, categories, form]);
 
   const updateMutation = useMutation({
     mutationFn: (data: DishFormValues) =>
       dishApi.update(dishId, {
-        restaurant_id: selectedRestaurant!.id,
+        restaurant_id: dishRestaurantId!,
         menuCategoryId: parseInt(data.menuCategoryId),
         name: data.name,
         price: data.price,
@@ -168,7 +175,7 @@ export default function EditDishPage() {
         allergens: selectedAllergens.map((name) => ({ name })),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dishes', selectedRestaurant?.id] });
+      queryClient.invalidateQueries({ queryKey: ['dishes', dishRestaurantId] });
       queryClient.invalidateQueries({ queryKey: ['dish', dishId] });
       toast.success('Блюдо обновлено');
       router.push('/dashboard/menu/dishes');
@@ -177,22 +184,6 @@ export default function EditDishPage() {
       toast.error('Ошибка при обновлении блюда');
     },
   });
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    try {
-      const response = await uploadApi.uploadImage(file);
-      form.setValue('image', response.data.url);
-      toast.success('Изображение загружено');
-    } catch {
-      toast.error('Ошибка загрузки изображения');
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   const toggleAllergen = (allergen: string) => {
     setSelectedAllergens((prev) =>
@@ -272,6 +263,7 @@ export default function EditDishPage() {
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
+                          key={field.value || 'empty'}
                         >
                           <FormControl>
                             <SelectTrigger>

@@ -29,8 +29,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { restaurantApi, uploadApi, getImageUrl } from '@/lib/api';
+import { restaurantApi, getImageUrl } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
+import { useImageUpload } from '@/hooks/use-image-upload';
 import { useTranslation } from '@/i18n';
 
 const CURRENCIES = [
@@ -88,7 +89,6 @@ export default function NewRestaurantPage() {
   const queryClient = useQueryClient();
   const { organization } = useAuthStore();
   const { t } = useTranslation();
-  const [isUploading, setIsUploading] = useState(false);
 
   const form = useForm<RestaurantFormValues>({
     resolver: zodResolver(restaurantSchema),
@@ -102,6 +102,10 @@ export default function NewRestaurantPage() {
       currency: 'USD',
       working_hours: defaultWorkingHours,
     },
+  });
+
+  const { isUploading, handleImageUpload } = useImageUpload({
+    onSuccess: (url) => form.setValue('image_url', url),
   });
 
   const createMutation = useMutation({
@@ -126,22 +130,6 @@ export default function NewRestaurantPage() {
       toast.error('Ошибка при создании ресторана');
     },
   });
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    try {
-      const response = await uploadApi.uploadImage(file);
-      form.setValue('image_url', response.data.url);
-      toast.success('Изображение загружено');
-    } catch {
-      toast.error('Ошибка загрузки изображения');
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   const copyToAllDays = (sourceIndex: number) => {
     const source = form.getValues(`working_hours.${sourceIndex}`);

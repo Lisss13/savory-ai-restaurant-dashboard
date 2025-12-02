@@ -148,6 +148,11 @@ export interface Dish {
     name: string;
     phone: string;
   };
+  restaurant?: {
+    id: number;
+    name: string;
+    currency?: string;
+  };
   menuCategory?: {
     id: number;
     name: string;

@@ -30,8 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {getImageUrl, restaurantApi, uploadApi} from '@/lib/api';
+import { getImageUrl, restaurantApi } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
+import { useImageUpload } from '@/hooks/use-image-upload';
 import { useTranslation } from '@/i18n';
 
 const CURRENCIES = [
@@ -61,7 +62,6 @@ export default function EditRestaurantPage() {
   const { organization } = useAuthStore();
   const { t } = useTranslation();
   const restaurantId = Number(params.id);
-  const [isUploading, setIsUploading] = useState(false);
 
   const DAYS_OF_WEEK = [
     { value: 0, label: t.restaurants.sunday },
@@ -114,6 +114,12 @@ export default function EditRestaurantPage() {
       currency: 'USD',
       working_hours: defaultWorkingHours,
     },
+  });
+
+  const { isUploading, handleImageUpload } = useImageUpload({
+    onSuccess: (url) => form.setValue('image_url', url),
+    successMessage: t.restaurants.imageUploaded,
+    errorMessage: t.restaurants.imageUploadError,
   });
 
   useEffect(() => {
@@ -175,22 +181,6 @@ export default function EditRestaurantPage() {
       toast.error(t.restaurants.restaurantUpdateError);
     },
   });
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    try {
-      const response = await uploadApi.uploadImage(file);
-      form.setValue('image_url', response.data.url);
-      toast.success(t.restaurants.imageUploaded);
-    } catch {
-      toast.error(t.restaurants.imageUploadError);
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   const copyToAllDays = (sourceIndex: number) => {
     const source = form.getValues(`working_hours.${sourceIndex}`);
