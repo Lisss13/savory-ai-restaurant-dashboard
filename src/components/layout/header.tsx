@@ -1,8 +1,9 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useTheme } from 'next-themes';
-import { Moon, Sun, Store, Check, ChevronDown, Globe } from 'lucide-react';
+import { Moon, Sun, Store, Check, ChevronDown, Globe, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -21,10 +22,46 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { useRestaurantStore } from '@/store/restaurant';
+import { useSubscriptionStore } from '@/store/subscription';
 import { useTranslation } from '@/i18n';
 
 interface HeaderProps {
   breadcrumbs?: { title: string; href?: string }[];
+}
+
+function SubscriptionBanner() {
+  const { activeSubscription } = useSubscriptionStore();
+  const { t } = useTranslation();
+
+  // Only show banner if subscription exists and daysLeft <= 7
+  if (!activeSubscription || activeSubscription.daysLeft > 7 || !activeSubscription.isActive) {
+    return null;
+  }
+
+  const daysLeft = activeSubscription.daysLeft;
+
+  let message: string;
+  if (daysLeft === 0) {
+    message = t.settingsSection.subscriptionExpiresToday;
+  } else if (daysLeft === 1) {
+    message = t.settingsSection.subscriptionExpiresTomorrow;
+  } else {
+    message = t.settingsSection.subscriptionExpiresSoon.replace('{days}', String(daysLeft));
+  }
+
+  return (
+    <div className="bg-destructive text-destructive-foreground px-4 py-2 text-sm flex items-center justify-between gap-4">
+      <div className="flex items-center gap-2">
+        <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+        <span>{message}</span>
+      </div>
+      <Button variant="outline" size="sm" asChild className="flex-shrink-0 bg-transparent border-destructive-foreground/30 hover:bg-destructive-foreground/10">
+        <Link href="/dashboard/settings/subscription">
+          {t.settingsSection.extendNow}
+        </Link>
+      </Button>
+    </div>
+  );
 }
 
 export function Header({ breadcrumbs }: HeaderProps) {
@@ -35,7 +72,9 @@ export function Header({ breadcrumbs }: HeaderProps) {
   const hasMultipleRestaurants = (restaurants?.length ?? 0) > 1;
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+    <>
+      <SubscriptionBanner />
+      <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-2 h-4" />
 
@@ -134,5 +173,6 @@ export function Header({ breadcrumbs }: HeaderProps) {
         </DropdownMenu>
       </div>
     </header>
+    </>
   );
 }

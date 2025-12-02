@@ -6,6 +6,7 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { useAuthStore } from '@/store/auth';
 import { useRestaurantStore } from '@/store/restaurant';
+import { useSubscriptionStore } from '@/store/subscription';
 import { restaurantApi } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -17,6 +18,7 @@ export default function DashboardLayout({
   const router = useRouter();
   const { isAuthenticated, checkAuth, organization } = useAuthStore();
   const { setRestaurants, setSelectedRestaurant, selectedRestaurant } = useRestaurantStore();
+  const { fetchActiveSubscription } = useSubscriptionStore();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -57,6 +59,13 @@ export default function DashboardLayout({
 
     loadRestaurants();
   }, [organization?.id, setRestaurants, setSelectedRestaurant, selectedRestaurant]);
+
+  // Load subscription data
+  useEffect(() => {
+    if (organization?.id) {
+      fetchActiveSubscription(organization.id);
+    }
+  }, [organization?.id, fetchActiveSubscription]);
 
   if (isLoading) {
     return (

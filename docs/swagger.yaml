@@ -1032,6 +1032,10 @@ components:
             - `reservation` — вопросы для чата бронирования столиков
             - `menu` — вопросы для чата с информацией о меню
           example: menu
+        display_order:
+          type: integer
+          description: Порядок отображения вопроса (меньше = выше в списке)
+          example: 0
 
     CreateQuestionRequest:
       type: object
@@ -1055,6 +1059,10 @@ components:
             - `menu` — для чата с информацией о меню (по умолчанию)
           default: menu
           example: menu
+        displayOrder:
+          type: integer
+          description: Порядок отображения вопроса (опционально). Если не указан, вопрос добавляется в конец списка.
+          example: 0
 
     UpdateQuestionRequest:
       type: object
@@ -1070,6 +1078,26 @@ components:
           type: string
           enum: [reservation, menu]
           description: Новый тип чата для вопроса
+        displayOrder:
+          type: integer
+          description: Порядок отображения вопроса
+          example: 1
+
+    ReorderQuestionsRequest:
+      type: object
+      description: Запрос на изменение порядка отображения вопросов
+      required:
+        - questionIds
+      properties:
+        questionIds:
+          type: array
+          description: |
+            Массив ID вопросов в желаемом порядке отображения.
+            Первый элемент получит display_order = 0, второй = 1 и т.д.
+          items:
+            type: integer
+          minItems: 1
+          example: [5, 3, 7, 1]
 
     # ==================== Chat ====================
     StartTableSessionRequest:
@@ -1256,6 +1284,112 @@ components:
           type: integer
           minimum: 1
           description: Количество дополнительных месяцев
+
+    # ==================== Extension Request ====================
+    ExtensionRequestResponse:
+      type: object
+      description: Информация о заявке на продление подписки
+      properties:
+        id:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        organization:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            phone:
+              type: string
+        user:
+          type: object
+          description: Пользователь, создавший заявку
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            email:
+              type: string
+        name:
+          type: string
+          description: Имя контактного лица
+        phone:
+          type: string
+          description: Телефон для связи
+        email:
+          type: string
+          description: Email для связи
+        period:
+          type: integer
+          description: Желаемый период продления (месяцев)
+        comment:
+          type: string
+          description: Комментарий от пользователя
+        status:
+          type: string
+          enum: [pending, approved, rejected, completed]
+          description: Статус заявки
+        adminComment:
+          type: string
+          description: Комментарий администратора
+
+    ExtensionRequestsResponse:
+      type: object
+      description: Список заявок на продление
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtensionRequestResponse'
+
+    CreateExtensionRequestRequest:
+      type: object
+      description: Запрос на создание заявки на продление подписки
+      required:
+        - name
+        - phone
+        - email
+      properties:
+        name:
+          type: string
+          description: Имя контактного лица
+          example: "Иван Иванов"
+        phone:
+          type: string
+          description: Телефон для связи
+          example: "+79001234567"
+        email:
+          type: string
+          format: email
+          description: Email для связи
+          example: "ivan@example.com"
+        period:
+          type: integer
+          minimum: 1
+          description: Желаемый период продления (месяцев)
+          example: 3
+        comment:
+          type: string
+          description: Комментарий от пользователя
+          example: "Хотим продлить подписку на 3 месяца"
+
+    UpdateExtensionRequestStatusRequest:
+      type: object
+      description: Запрос на обновление статуса заявки
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [pending, approved, rejected, completed]
+          description: Новый статус заявки
+        adminComment:
+          type: string
+          description: Комментарий администратора
 
     # ==================== Reservation ====================
     ReservationResponse:
@@ -1898,6 +2032,7 @@ paths:
       description: |
         Создаёт нового пользователя и организацию.
         Пользователь автоматически становится администратором созданной организации.
+        Автоматически активируется пробная подписка на 1 месяц от даты регистрации.
         После регистрации возвращается JWT токен для немедленного использования.
       operationId: register
       requestBody:
@@ -2346,6 +2481,46 @@ paths:
           description: Язык создан
         '400':
           description: Язык с таким кодом уже существует
+
+  /languages/restaurant/{id}:
+    get:
+      tags:
+        - Language
+      summary: Получить языки организации по ID ресторана (публичный)
+      description: |
+        Возвращает список языков, привязанных к организации ресторана.
+        **Публичный endpoint** — не требует авторизации.
+
+        Используется для определения доступных языков в публичных интерфейсах
+        (чат-бот, меню, бронирование).
+      operationId: getLanguagesByRestaurantId
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID ресторана
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '200':
+          description: Список языков организации
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          languages:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/LanguageResponse'
+        '404':
+          description: Ресторан не найден
 
   /languages/{id}:
     get:
@@ -3310,6 +3485,74 @@ paths:
                         items:
                           $ref: '#/components/schemas/QuestionResponse'
 
+  /questions/restaurants/{id}:
+    get:
+      tags:
+        - Question
+      summary: Получить вопросы по ID ресторана (публичный)
+      description: |
+        Возвращает список вопросов для чат-бота по ID ресторана.
+        **Публичный endpoint** — не требует авторизации.
+
+        **Логика определения языка:**
+        - Если передан параметр `language` — используется указанный язык
+        - Если не передан — выбирается первый язык из языков организации ресторана
+        - Если у организации нет языков — возвращаются все вопросы без фильтрации по языку
+
+        **Примеры запросов:**
+        - `GET /questions/restaurants/1` — вопросы на языке по умолчанию
+        - `GET /questions/restaurants/1?language=ru` — вопросы на русском языке
+        - `GET /questions/restaurants/1?chat_type=menu` — вопросы для меню
+        - `GET /questions/restaurants/1?language=en&chat_type=reservation` — комбинированный фильтр
+      operationId: getQuestionsByRestaurantId
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID ресторана
+          schema:
+            type: integer
+          example: 1
+        - name: language
+          in: query
+          required: false
+          description: |
+            Код языка для фильтрации (например, en, ru).
+            Если не указан — выбирается первый язык из языков организации ресторана.
+          schema:
+            type: string
+          example: ru
+        - name: chat_type
+          in: query
+          required: false
+          description: |
+            Тип чата для фильтрации:
+            - `reservation` — вопросы для чата бронирования
+            - `menu` — вопросы для чата с информацией о меню
+          schema:
+            type: string
+            enum: [reservation, menu]
+          example: menu
+      responses:
+        '200':
+          description: Список вопросов
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          questions:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/QuestionResponse'
+        '404':
+          description: Ресторан не найден
+
   /questions/{id}:
     put:
       tags:
@@ -3359,6 +3602,59 @@ paths:
           description: Вопрос удалён
         '404':
           description: Вопрос не найден
+
+  /questions/reorder:
+    put:
+      tags:
+        - Question
+      summary: Изменить порядок вопросов
+      description: |
+        Массово обновляет порядок отображения вопросов.
+        Передаётся массив ID вопросов в желаемом порядке.
+        Первый элемент получит display_order = 0, второй = 1 и т.д.
+
+        **Пример использования:** При drag-and-drop сортировке вопросов на фронтенде
+        отправляется массив ID всех вопросов с их новым порядком.
+      operationId: reorderQuestions
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderQuestionsRequest'
+            examples:
+              reorderQuestions:
+                summary: Изменить порядок 4 вопросов
+                value:
+                  questionIds: [5, 3, 7, 1]
+      responses:
+        '200':
+          description: Порядок вопросов обновлён
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          questions:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/QuestionResponse'
+                      messages:
+                        type: array
+                        items:
+                          type: string
+                        example: ["Questions reordered successfully"]
+        '400':
+          description: Ошибка валидации (пустой массив или некорректные ID)
+        '404':
+          description: Один или несколько вопросов не найдены
 
   # ==================== QR Codes ====================
   /qrcodes/restaurant/{restaurant_id}:
@@ -4376,6 +4672,198 @@ paths:
           description: Подписка деактивирована
         '404':
           description: Подписка не найдена
+
+  # ==================== Extension Requests ====================
+  /subscriptions/extension-requests:
+    get:
+      tags:
+        - Subscription
+      summary: Получить все заявки на продление
+      description: |
+        Возвращает список всех заявок на продление подписок.
+        Используется администраторами для обработки запросов.
+      operationId: getAllExtensionRequests
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Список заявок на продление
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ExtensionRequestsResponse'
+        '401':
+          description: Не авторизован
+
+    post:
+      tags:
+        - Subscription
+      summary: Создать заявку на продление подписки
+      description: |
+        Создаёт заявку на продление подписки.
+        Пользователь указывает контактные данные (имя, телефон, email),
+        опционально желаемый период продления и комментарий.
+        Заявка создаётся со статусом "pending".
+      operationId: createExtensionRequest
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExtensionRequestRequest'
+      responses:
+        '201':
+          description: Заявка создана
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ExtensionRequestResponse'
+        '400':
+          description: Ошибка валидации
+        '401':
+          description: Не авторизован
+
+  /subscriptions/extension-requests/my:
+    get:
+      tags:
+        - Subscription
+      summary: Получить мои заявки на продление
+      description: Возвращает список заявок на продление текущей организации пользователя.
+      operationId: getMyExtensionRequests
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Список заявок на продление
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ExtensionRequestsResponse'
+        '401':
+          description: Не авторизован
+
+  /subscriptions/extension-requests/status/{status}:
+    get:
+      tags:
+        - Subscription
+      summary: Получить заявки по статусу
+      description: |
+        Возвращает список заявок на продление с указанным статусом.
+        Статусы: pending, approved, rejected, completed.
+      operationId: getExtensionRequestsByStatus
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: path
+          required: true
+          description: Статус заявки
+          schema:
+            type: string
+            enum: [pending, approved, rejected, completed]
+      responses:
+        '200':
+          description: Список заявок на продление
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ExtensionRequestsResponse'
+        '401':
+          description: Не авторизован
+
+  /subscriptions/extension-requests/{id}:
+    get:
+      tags:
+        - Subscription
+      summary: Получить заявку по ID
+      description: Возвращает информацию о заявке на продление.
+      operationId: getExtensionRequestById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID заявки
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Информация о заявке
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ExtensionRequestResponse'
+        '404':
+          description: Заявка не найдена
+
+  /subscriptions/extension-requests/{id}/status:
+    patch:
+      tags:
+        - Subscription
+      summary: Обновить статус заявки
+      description: |
+        Обновляет статус заявки на продление.
+        Используется администраторами для обработки заявок.
+      operationId: updateExtensionRequestStatus
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID заявки
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExtensionRequestStatusRequest'
+      responses:
+        '200':
+          description: Статус обновлён
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ExtensionRequestResponse'
+        '400':
+          description: Ошибка валидации
+        '404':
+          description: Заявка не найдена
 
   # ==================== Admin ====================
   /admin/stats:
