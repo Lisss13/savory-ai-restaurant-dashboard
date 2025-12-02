@@ -377,7 +377,7 @@
     "tags": [],
     "title": "не подставилась категория на странице блюда ",
     "description": "",
-    "status": "IN_PROGRESS",
+    "status": "DONE",
     "date": {
       "date": {
         "year": 2025,
@@ -389,6 +389,19 @@
         "minute": 36,
         "second": 40,
         "nano": 430456000
+      }
+    },
+    "finishDate": {
+      "date": {
+        "year": 2025,
+        "month": 12,
+        "day": 2
+      },
+      "time": {
+        "hour": 16,
+        "minute": 54,
+        "second": 24,
+        "nano": 847877000
       }
     },
     "isImported": false
