@@ -245,9 +245,12 @@ export default function TablesPage() {
                         {tableStatus.text}
                       </Badge>
                     </div>
-                    <CardDescription className="flex items-center gap-1">
-                      <Users className="h-4 w-4" />
-                      {table.guestCount} {t.tablesSection.seats}
+                    <CardDescription className="flex items-center gap-3">
+                      <span>ID: {table.id}</span>
+                      <span className="flex items-center gap-1">
+                        <Users className="h-4 w-4" />
+                        {table.guestCount} {t.tablesSection.seats}
+                      </span>
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="mt-auto">

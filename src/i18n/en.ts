@@ -746,6 +746,7 @@ export const en: Translations = {
     daysRemaining: 'Days remaining',
     subscriptionProgress: 'Subscription progress',
     noActiveSubscription: 'You have no active subscription',
+    subscribe: 'Subscribe',
     manageSubscription: 'Manage subscription',
     manageSubscriptionDesc: 'Extend or change your subscription',
     extendSubscription: 'Extend subscription',

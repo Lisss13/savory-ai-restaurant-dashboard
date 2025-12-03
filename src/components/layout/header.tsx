@@ -30,11 +30,35 @@ interface HeaderProps {
 }
 
 function SubscriptionBanner() {
-  const { activeSubscription } = useSubscriptionStore();
+  const { activeSubscription, isLoading, error } = useSubscriptionStore();
   const { t } = useTranslation();
 
-  // Only show banner if subscription exists and daysLeft <= 7
-  if (!activeSubscription || activeSubscription.daysLeft > 7 || !activeSubscription.isActive) {
+  // Don't show while loading
+  if (isLoading) {
+    return null;
+  }
+
+  // Show "no subscription" banner if there's no active subscription, error, or subscription is inactive
+  const hasNoSubscription = !activeSubscription || error || !activeSubscription.isActive;
+
+  if (hasNoSubscription) {
+    return (
+      <div className="bg-destructive text-destructive-foreground px-4 py-2 text-sm flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+          <span>{t.settingsSection.noActiveSubscription}</span>
+        </div>
+        <Button variant="outline" size="sm" asChild className="flex-shrink-0 bg-black text-white border-black hover:bg-black/80">
+          <Link href="/dashboard/settings/subscription">
+            {t.settingsSection.subscribe}
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+
+  // Show expiration warning banner if subscription expires in 7 days or less
+  if (activeSubscription.daysLeft > 7) {
     return null;
   }
 

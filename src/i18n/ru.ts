@@ -744,6 +744,7 @@ export const ru = {
     daysRemaining: 'Осталось дней',
     subscriptionProgress: 'Прогресс подписки',
     noActiveSubscription: 'У вас нет активной подписки',
+    subscribe: 'Оформить подписку',
     manageSubscription: 'Управление подпиской',
     manageSubscriptionDesc: 'Продлите или измените вашу подписку',
     extendSubscription: 'Продлить подписку',
