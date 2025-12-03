@@ -14,7 +14,6 @@ import {
   User,
   Bot,
   Building2,
-  Phone,
   CalendarPlus,
   ExternalLink,
   Circle,
@@ -529,10 +528,6 @@ export default function ActiveChatsPage() {
                     >
                       <CalendarPlus className="mr-2 h-4 w-4" />
                       {t.chatsSection.createReservation}
-                    </Button>
-                    <Button variant="outline" size="sm" className="w-full justify-start">
-                      <Phone className="mr-2 h-4 w-4" />
-                      {t.chatsSection.call}
                     </Button>
                     <Button
                       variant="outline"
