@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { ru } from 'date-fns/locale';
+import { ru as ruLocale, enUS } from 'date-fns/locale';
 import {
   MapPin,
   Phone,
@@ -28,22 +28,27 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { restaurantApi, tableApi, reservationApi, chatApi, getImageUrl } from '@/lib/api';
+import { useTranslation } from '@/i18n';
+import { useLanguageStore } from '@/store/language';
 import type { Table, Reservation, ChatSession } from '@/types';
-
-const DAYS_OF_WEEK = [
-  { value: 0, label: 'Воскресенье', short: 'Вс' },
-  { value: 1, label: 'Понедельник', short: 'Пн' },
-  { value: 2, label: 'Вторник', short: 'Вт' },
-  { value: 3, label: 'Среда', short: 'Ср' },
-  { value: 4, label: 'Четверг', short: 'Чт' },
-  { value: 5, label: 'Пятница', short: 'Пт' },
-  { value: 6, label: 'Суббота', short: 'Сб' },
-];
 
 export default function RestaurantDetailPage() {
   const router = useRouter();
   const params = useParams();
   const restaurantId = Number(params.id);
+  const { t } = useTranslation();
+  const { language } = useLanguageStore();
+  const dateLocale = language === 'ru' ? ruLocale : enUS;
+
+  const DAYS_OF_WEEK = [
+    { value: 0, label: t.restaurantDetail.sunday, short: t.restaurantDetail.sundayShort },
+    { value: 1, label: t.restaurantDetail.monday, short: t.restaurantDetail.mondayShort },
+    { value: 2, label: t.restaurantDetail.tuesday, short: t.restaurantDetail.tuesdayShort },
+    { value: 3, label: t.restaurantDetail.wednesday, short: t.restaurantDetail.wednesdayShort },
+    { value: 4, label: t.restaurantDetail.thursday, short: t.restaurantDetail.thursdayShort },
+    { value: 5, label: t.restaurantDetail.friday, short: t.restaurantDetail.fridayShort },
+    { value: 6, label: t.restaurantDetail.saturday, short: t.restaurantDetail.saturdayShort },
+  ];
 
   const { data: restaurant, isLoading } = useQuery({
     queryKey: ['restaurant', restaurantId],
@@ -112,9 +117,9 @@ export default function RestaurantDetailPage() {
       <>
         <Header
           breadcrumbs={[
-            { title: 'Дашборд', href: '/dashboard' },
-            { title: 'Рестораны', href: '/dashboard/restaurants' },
-            { title: 'Загрузка...' },
+            { title: t.nav.dashboard, href: '/dashboard' },
+            { title: t.nav.restaurants, href: '/dashboard/restaurants' },
+            { title: t.restaurantDetail.loading },
           ]}
         />
         <main className="flex-1 space-y-6 p-6">
@@ -139,15 +144,15 @@ export default function RestaurantDetailPage() {
       <>
         <Header
           breadcrumbs={[
-            { title: 'Дашборд', href: '/dashboard' },
-            { title: 'Рестораны', href: '/dashboard/restaurants' },
-            { title: 'Не найден' },
+            { title: t.nav.dashboard, href: '/dashboard' },
+            { title: t.nav.restaurants, href: '/dashboard/restaurants' },
+            { title: t.restaurantDetail.notFound },
           ]}
         />
         <main className="flex-1 p-6">
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
-              Ресторан не найден
+              {t.restaurantDetail.restaurantNotFound}
             </CardContent>
           </Card>
         </main>
@@ -159,8 +164,8 @@ export default function RestaurantDetailPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Рестораны', href: '/dashboard/restaurants' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.restaurants, href: '/dashboard/restaurants' },
           { title: restaurant.name },
         ]}
       />
@@ -175,7 +180,7 @@ export default function RestaurantDetailPage() {
               <div className="flex items-center gap-3">
                 <h1 className="text-3xl font-bold tracking-tight">{restaurant.name}</h1>
                 <Badge variant={isOpen() ? 'default' : 'secondary'}>
-                  {isOpen() ? 'Открыто' : 'Закрыто'}
+                  {isOpen() ? t.restaurantDetail.open : t.restaurantDetail.closed}
                 </Badge>
               </div>
               <p className="text-muted-foreground">{restaurant.address}</p>
@@ -185,19 +190,19 @@ export default function RestaurantDetailPage() {
             <Button variant="outline" asChild>
               <Link href={`/dashboard/qr-codes?restaurant=${restaurantId}`}>
                 <QrCode className="mr-2 h-4 w-4" />
-                QR-код
+                {t.restaurantDetail.qrCode}
               </Link>
             </Button>
             <Button variant="outline" asChild>
               <Link href={`/dashboard/restaurants/${restaurantId}/settings`}>
                 <Settings className="mr-2 h-4 w-4" />
-                Настройки
+                {t.restaurantDetail.settings}
               </Link>
             </Button>
             <Button asChild>
               <Link href={`/dashboard/restaurants/${restaurantId}/edit`}>
                 <Pencil className="mr-2 h-4 w-4" />
-                Редактировать
+                {t.restaurantDetail.edit}
               </Link>
             </Button>
           </div>
@@ -207,43 +212,43 @@ export default function RestaurantDetailPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Столы</CardTitle>
+              <CardTitle className="text-sm font-medium">{t.restaurantDetail.tables}</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{tables?.length || 0}</div>
               <p className="text-xs text-muted-foreground">
-                Всего мест: {tables?.reduce((acc: number, t: Table) => acc + t.guestCount, 0) || 0}
+                {t.restaurantDetail.totalSeats}: {tables?.reduce((acc: number, tbl: Table) => acc + tbl.guestCount, 0) || 0}
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Бронирований сегодня</CardTitle>
+              <CardTitle className="text-sm font-medium">{t.restaurantDetail.reservationsToday}</CardTitle>
               <CalendarDays className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{getTodayReservationsCount()}</div>
               <p className="text-xs text-muted-foreground">
-                Всего: {reservations?.length || 0}
+                {t.restaurantDetail.total}: {reservations?.length || 0}
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Активные чаты</CardTitle>
+              <CardTitle className="text-sm font-medium">{t.restaurantDetail.activeChats}</CardTitle>
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{getActiveChatsCount()}</div>
               <p className="text-xs text-muted-foreground">
-                Всего сессий: {chatSessions?.length || 0}
+                {t.restaurantDetail.totalSessions}: {chatSessions?.length || 0}
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Организация</CardTitle>
+              <CardTitle className="text-sm font-medium">{t.restaurantDetail.organization}</CardTitle>
               <UtensilsCrossed className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -259,8 +264,8 @@ export default function RestaurantDetailPage() {
           {/* Main Info */}
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle>Информация о ресторане</CardTitle>
-              <CardDescription>Основные данные и контакты</CardDescription>
+              <CardTitle>{t.restaurantDetail.restaurantInfo}</CardTitle>
+              <CardDescription>{t.restaurantDetail.basicDataAndContacts}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {restaurant.image_url && (
@@ -275,7 +280,7 @@ export default function RestaurantDetailPage() {
 
               {restaurant.description && (
                 <div>
-                  <h4 className="text-sm font-medium mb-2">Описание</h4>
+                  <h4 className="text-sm font-medium mb-2">{t.restaurantDetail.description}</h4>
                   <p className="text-muted-foreground">{restaurant.description}</p>
                 </div>
               )}
@@ -286,14 +291,14 @@ export default function RestaurantDetailPage() {
                 <div className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <h4 className="text-sm font-medium">Адрес</h4>
+                    <h4 className="text-sm font-medium">{t.restaurantDetail.address}</h4>
                     <p className="text-muted-foreground">{restaurant.address}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <h4 className="text-sm font-medium">Телефон</h4>
+                    <h4 className="text-sm font-medium">{t.restaurantDetail.phone}</h4>
                     <p className="text-muted-foreground">{restaurant.phone}</p>
                   </div>
                 </div>
@@ -301,7 +306,7 @@ export default function RestaurantDetailPage() {
                   <div className="flex items-start gap-3">
                     <Globe className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
-                      <h4 className="text-sm font-medium">Веб-сайт</h4>
+                      <h4 className="text-sm font-medium">{t.restaurantDetail.website}</h4>
                       <a
                         href={restaurant.website}
                         target="_blank"
@@ -317,16 +322,16 @@ export default function RestaurantDetailPage() {
                 <div className="flex items-start gap-3">
                   <CalendarDays className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <h4 className="text-sm font-medium">Дата создания</h4>
+                    <h4 className="text-sm font-medium">{t.restaurantDetail.createdAt}</h4>
                     <p className="text-muted-foreground">
-                      {format(new Date(restaurant.created_at), 'd MMMM yyyy', { locale: ru })}
+                      {format(new Date(restaurant.created_at), 'd MMMM yyyy', { locale: dateLocale })}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Banknote className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <h4 className="text-sm font-medium">Валюта</h4>
+                    <h4 className="text-sm font-medium">{t.restaurantDetail.currency}</h4>
                     <p className="text-muted-foreground">{restaurant.currency || 'RUB'}</p>
                   </div>
                 </div>
@@ -336,20 +341,20 @@ export default function RestaurantDetailPage() {
                 <>
                   <Separator />
                   <div>
-                    <h4 className="text-sm font-medium mb-3">Настройки бронирования</h4>
+                    <h4 className="text-sm font-medium mb-3">{t.restaurantDetail.reservationSettings}</h4>
                     <div className="grid gap-4 sm:grid-cols-2">
                       {restaurant.reservation_duration && (
                         <div className="flex items-center gap-2 text-sm">
                           <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">Длительность брони:</span>
-                          <span className="font-medium">{restaurant.reservation_duration} мин</span>
+                          <span className="text-muted-foreground">{t.restaurantDetail.reservationDuration}:</span>
+                          <span className="font-medium">{restaurant.reservation_duration} {t.restaurantDetail.minutes}</span>
                         </div>
                       )}
                       {restaurant.min_reservation_time && (
                         <div className="flex items-center gap-2 text-sm">
                           <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">Мин. время до брони:</span>
-                          <span className="font-medium">{restaurant.min_reservation_time} мин</span>
+                          <span className="text-muted-foreground">{t.restaurantDetail.minReservationTime}:</span>
+                          <span className="font-medium">{restaurant.min_reservation_time} {t.restaurantDetail.minutes}</span>
                         </div>
                       )}
                     </div>
@@ -364,9 +369,9 @@ export default function RestaurantDetailPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                Расписание работы
+                {t.restaurantDetail.workingSchedule}
               </CardTitle>
-              <CardDescription>Часы работы ресторана</CardDescription>
+              <CardDescription>{t.restaurantDetail.workingHoursDesc}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -388,12 +393,12 @@ export default function RestaurantDetailPage() {
                         {day.label}
                         {isToday && (
                           <Badge variant="outline" className="ml-2 text-xs">
-                            Сегодня
+                            {t.restaurantDetail.today}
                           </Badge>
                         )}
                       </span>
                       {isClosed ? (
-                        <span className="text-muted-foreground text-sm">Выходной</span>
+                        <span className="text-muted-foreground text-sm">{t.restaurantDetail.dayOff}</span>
                       ) : (
                         <span className="text-sm">
                           {hours.open_time} — {hours.close_time}
@@ -410,37 +415,37 @@ export default function RestaurantDetailPage() {
         {/* Quick Links */}
         <Card>
           <CardHeader>
-            <CardTitle>Быстрые действия</CardTitle>
-            <CardDescription>Перейдите к управлению рестораном</CardDescription>
+            <CardTitle>{t.restaurantDetail.quickActions}</CardTitle>
+            <CardDescription>{t.restaurantDetail.quickActionsDesc}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
               <Button variant="outline" className="h-auto py-4 flex-col" asChild>
                 <Link href="/dashboard/tables">
                   <Users className="h-6 w-6 mb-2" />
-                  <span>Управление столами</span>
-                  <span className="text-xs text-muted-foreground">{tables?.length || 0} столов</span>
+                  <span>{t.restaurantDetail.tableManagement}</span>
+                  <span className="text-xs text-muted-foreground">{tables?.length || 0} {t.restaurantDetail.tablesCount}</span>
                 </Link>
               </Button>
               <Button variant="outline" className="h-auto py-4 flex-col" asChild>
                 <Link href="/dashboard/reservations/list">
                   <CalendarDays className="h-6 w-6 mb-2" />
-                  <span>Бронирования</span>
-                  <span className="text-xs text-muted-foreground">{getTodayReservationsCount()} сегодня</span>
+                  <span>{t.restaurantDetail.reservations}</span>
+                  <span className="text-xs text-muted-foreground">{getTodayReservationsCount()} {t.restaurantDetail.todaySuffix}</span>
                 </Link>
               </Button>
               <Button variant="outline" className="h-auto py-4 flex-col" asChild>
                 <Link href="/dashboard/chats/active">
                   <MessageSquare className="h-6 w-6 mb-2" />
-                  <span>Чаты</span>
-                  <span className="text-xs text-muted-foreground">{getActiveChatsCount()} активных</span>
+                  <span>{t.restaurantDetail.chats}</span>
+                  <span className="text-xs text-muted-foreground">{getActiveChatsCount()} {t.restaurantDetail.activeCount}</span>
                 </Link>
               </Button>
               <Button variant="outline" className="h-auto py-4 flex-col" asChild>
                 <Link href="/dashboard/menu/dishes">
                   <UtensilsCrossed className="h-6 w-6 mb-2" />
-                  <span>Меню</span>
-                  <span className="text-xs text-muted-foreground">Управление блюдами</span>
+                  <span>{t.restaurantDetail.menu}</span>
+                  <span className="text-xs text-muted-foreground">{t.restaurantDetail.dishManagement}</span>
                 </Link>
               </Button>
             </div>

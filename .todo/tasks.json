@@ -565,7 +565,7 @@
     "tags": [],
     "title": "проверить настройку валюты у ресторана ",
     "description": "",
-    "status": "TODO",
+    "status": "DONE",
     "date": {
       "date": {
         "year": 2025,
@@ -577,6 +577,54 @@
         "minute": 51,
         "second": 56,
         "nano": 685849000
+      }
+    },
+    "finishDate": {
+      "date": {
+        "year": 2025,
+        "month": 12,
+        "day": 3
+      },
+      "time": {
+        "hour": 17,
+        "minute": 2,
+        "second": 36,
+        "nano": 368315000
+      }
+    },
+    "isImported": false
+  },
+  {
+    "id": "TASK_526",
+    "priority": "LOW",
+    "tags": [],
+    "title": "проверить настройки ресторана ",
+    "description": "",
+    "status": "DONE",
+    "date": {
+      "date": {
+        "year": 2025,
+        "month": 12,
+        "day": 3
+      },
+      "time": {
+        "hour": 13,
+        "minute": 13,
+        "second": 32,
+        "nano": 443439000
+      }
+    },
+    "finishDate": {
+      "date": {
+        "year": 2025,
+        "month": 12,
+        "day": 3
+      },
+      "time": {
+        "hour": 17,
+        "minute": 2,
+        "second": 40,
+        "nano": 698255000
       }
     },
     "isImported": false
