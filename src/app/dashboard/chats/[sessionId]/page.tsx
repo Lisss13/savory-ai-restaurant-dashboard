@@ -147,7 +147,6 @@ export default function ChatSessionPage() {
     totalMessages: messages?.length || 0,
     userMessages: messages?.filter((m: ChatMessage) => m.authorType === 'user').length || 0,
     botMessages: messages?.filter((m: ChatMessage) => m.authorType === 'bot').length || 0,
-    staffMessages: messages?.filter((m: ChatMessage) => m.authorType === 'restaurant').length || 0,
     startTime: messages?.[0]?.sentAt,
     lastMessageTime: messages?.[messages.length - 1]?.sentAt,
   };
@@ -314,23 +313,19 @@ export default function ChatSessionPage() {
               {/* Статистика */}
               <div className="space-y-3">
                 <p className="text-sm font-medium">Статистика</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-2xl font-bold">{chatStats.totalMessages}</p>
-                    <p className="text-xs text-muted-foreground">Всего сообщений</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-2xl font-bold">{chatStats.userMessages}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-3 rounded-lg bg-muted/50 text-center">
+                    <p className="text-xl font-bold">{chatStats.userMessages}</p>
                     <p className="text-xs text-muted-foreground">От гостя</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-                    <p className="text-2xl font-bold text-blue-600">{chatStats.botMessages}</p>
+                  <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-center">
+                    <p className="text-xl font-bold text-blue-600">{chatStats.botMessages}</p>
                     <p className="text-xs text-muted-foreground">От AI</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
-                    <p className="text-2xl font-bold text-green-600">{chatStats.staffMessages}</p>
-                    <p className="text-xs text-muted-foreground">От персонала</p>
-                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50 text-center">
+                  <p className="text-xl font-bold">{chatStats.totalMessages}</p>
+                  <p className="text-xs text-muted-foreground">Всего сообщений</p>
                 </div>
               </div>
 
