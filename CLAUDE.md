@@ -15,7 +15,7 @@ npm run start    # Start production server
 
 - **Technical specification**: `docs/restaurant_dashboard_spec.md` - full project requirements, UI/UX specs, page descriptions, and feature details
 - **Server API**: `docs/swagger.yaml` - OpenAPI 3.0 specification for all backend endpoints
-- **Sorting feature spec**: `docs/new_task.md` - drag-and-drop sorting for questions and menu categories
+- **Current tasks**: `docs/new_task.md` - current task or feature being implemented
 
 **Important**: When implementing new functionality, always refer to these files to ensure compliance with the spec and correct API usage.
 
@@ -25,12 +25,12 @@ Copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_API_URL` to the backend
 
 ## Architecture
 
-This is a **Savory AI Restaurant Dashboard** - a Next.js 16 admin panel for restaurant management with Russian localization.
+This is a **Savory AI Restaurant Dashboard** - a Next.js 16 admin panel for restaurant management with multilingual support (Russian/English).
 
 ### Tech Stack
 - **Next.js 16** with App Router and React 19
 - **shadcn/ui** components (Radix primitives + Tailwind)
-- **Zustand** for client state (auth, restaurant selection)
+- **Zustand** for client state (auth, restaurant selection, language)
 - **TanStack Query** for server state and caching
 - **Zod** + **react-hook-form** for form validation
 - **Axios** for API requests with JWT interceptors
@@ -38,25 +38,155 @@ This is a **Savory AI Restaurant Dashboard** - a Next.js 16 admin panel for rest
 
 ### Key Directories
 
-- `src/app/(auth)/` - Public auth pages (login, register, password reset)
-- `src/app/dashboard/` - Protected dashboard routes (requires authentication)
-- `src/lib/api.ts` - Centralized API client with all endpoint functions
-- `src/store/` - Zustand stores (`auth.ts` for auth state, `restaurant.ts` for selected restaurant)
-- `src/types/index.ts` - All TypeScript interfaces matching the backend API
-- `src/components/ui/` - shadcn/ui components
-- `src/components/layout/` - App sidebar and header (with restaurant selector)
+```
+src/
+├── app/
+│   ├── (auth)/          # Public auth pages (login, register, password reset)
+│   └── dashboard/       # Protected dashboard routes
+├── components/
+│   ├── ui/              # shadcn/ui components
+│   ├── layout/          # App sidebar, header (with restaurant selector)
+│   └── nutrition.tsx    # Nutrition input component (КБЖУ)
+├── hooks/
+│   ├── use-image-upload.ts  # Reusable image upload hook
+│   └── use-mobile.ts        # Mobile detection hook
+├── i18n/
+│   ├── index.ts         # useTranslation hook
+│   ├── ru.ts            # Russian translations
+│   └── en.ts            # English translations
+├── lib/
+│   └── api.ts           # Centralized API client with all endpoints
+├── store/
+│   ├── auth.ts          # Auth state (JWT, user)
+│   ├── restaurant.ts    # Selected restaurant
+│   └── language.ts      # Language preference (ru/en)
+└── types/
+    └── index.ts         # All TypeScript interfaces
+```
 
-### Authentication Flow
+## Internationalization (i18n)
 
-JWT tokens stored in localStorage. The `useAuthStore` handles login/logout and persists to `auth-storage`. The API client's interceptor auto-attaches tokens and redirects to `/login` on 401. Logout redirects user to `/login`.
+### IMPORTANT: Translation Pattern
 
-### Route Structure
+The `t` from `useTranslation()` is an **OBJECT**, not a function!
+
+```typescript
+// ✅ CORRECT - t is an object with nested properties
+const { t } = useTranslation();
+<h1>{t.menuSection.title}</h1>
+<Button>{t.common.save}</Button>
+toast.success(t.tablesSection.tableCreated);
+
+// ❌ WRONG - t is NOT a function
+t('menuSection.title')  // This will NOT work!
+```
+
+### Translation Structure
+
+Translations are organized by sections in `src/i18n/ru.ts` and `src/i18n/en.ts`:
+
+```typescript
+{
+  common: { save, cancel, delete, ... },
+  auth: { login, logout, ... },
+  nav: { dashboard, menu, tables, ... },
+  menuSection: { title, addDish, ... },
+  tablesSection: { title, addTable, ... },
+  // ... other sections
+}
+```
+
+### Adding New Translations
+
+1. Add keys to both `ru.ts` and `en.ts` in the same section
+2. Use descriptive key names: `dishCreated`, `dishCreateError`
+3. Group related translations together
+
+## Common Patterns
+
+### Image Upload
+
+Use the reusable `useImageUpload` hook:
+
+```typescript
+import { useImageUpload } from '@/hooks/use-image-upload';
+
+const { isUploading, handleImageUpload } = useImageUpload({
+  onSuccess: (url) => form.setValue('image', url),
+});
+
+<Input type="file" onChange={handleImageUpload} disabled={isUploading} />
+```
+
+### Card Layout with Aligned Buttons
+
+For cards in a grid where buttons should align at the bottom:
+
+```tsx
+<Card className="flex flex-col">
+  <CardHeader>...</CardHeader>
+  <CardContent className="mt-auto">
+    <Button>...</Button>
+  </CardContent>
+</Card>
+```
+
+### Form Pattern
+
+Forms use react-hook-form with zod schemas:
+
+```typescript
+const schema = z.object({
+  name: z.string().min(1, 'Введите название'),
+  price: z.number().min(0, 'Цена должна быть положительной'),
+  isDishOfDay: z.boolean(),  // NOT .default() for checkboxes
+});
+
+const form = useForm<FormValues>({
+  resolver: zodResolver(schema),
+  defaultValues: { name: '', price: 0, isDishOfDay: false },
+});
+```
+
+### API Pattern
+
+All API calls go through functions in `src/lib/api.ts`:
+
+```typescript
+const { data } = await restaurantApi.getAll();
+const { data } = await dishApi.create({ menuCategoryId, name, price, ... });
+const { data } = await questionApi.reorder({ questionIds: [1, 2, 3] });
+```
+
+### Mutations with Toast Notifications
+
+```typescript
+const createMutation = useMutation({
+  mutationFn: (data) => dishApi.create(data),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['dishes'] });
+    toast.success(t.menuSection.dishCreated);
+    router.push('/dashboard/menu/dishes');
+  },
+  onError: () => {
+    toast.error(t.menuSection.dishCreateError);
+  },
+});
+```
+
+## Authentication Flow
+
+JWT tokens stored in localStorage. The `useAuthStore` handles login/logout and persists to `auth-storage`. The API client's interceptor auto-attaches tokens and redirects to `/login` on 401.
+
+## Route Structure
 
 - `/` redirects to `/login`
 - `/dashboard` - Main dashboard with stats
 - `/dashboard/restaurants` - Restaurant CRUD
 - `/dashboard/menu/categories` - Menu categories with drag-and-drop sorting
-- `/dashboard/menu/dishes` - Dishes management
+- `/dashboard/menu/dishes` - Dishes management (list, create, edit)
+- `/dashboard/menu/dishes/new` - Create new dish
+- `/dashboard/menu/dishes/[id]` - Edit dish
 - `/dashboard/tables` - Table management
 - `/dashboard/reservations/list`, `/dashboard/reservations/calendar` - Reservations
 - `/dashboard/chats/active`, `/dashboard/chats/history` - Customer chat interface
@@ -71,37 +201,22 @@ JWT tokens stored in localStorage. The `useAuthStore` handles login/logout and p
 - `/dashboard/settings/support` - Support tickets (create & view)
 - `/dashboard/admin/*` - Admin-only pages (stats, users, organizations, moderation, logs)
 
-### API Pattern
+## Restaurant Selection
 
-All API calls go through functions in `src/lib/api.ts`. Example:
-```typescript
-const { data } = await restaurantApi.getAll();
-const { data } = await dishApi.create({ menuCategoryId, name, price, ... });
-const { data } = await supportApi.create({ title, description, email });
-const { data } = await questionApi.reorder({ questionIds: [1, 2, 3] });
-const { data } = await categoryApi.updateSortOrder({ categories: [{ id: 1, sort_order: 0 }] });
-```
+When user has multiple restaurants, a dropdown appears in the header to switch between them. The selected restaurant is persisted in `restaurant-storage` via Zustand. Many pages require a selected restaurant to load data.
 
-### Form Pattern
+## Drag-and-Drop Sorting
 
-Forms use react-hook-form with zod schemas. Boolean fields in zod schemas must be `z.boolean()` (not `.default()`) to work with the resolver.
-
-### Drag-and-Drop Sorting
-
-Uses `@dnd-kit/core` and `@dnd-kit/sortable` for drag-and-drop functionality:
-- **Questions page**: Reorder via `PUT /questions/reorder` with `{ questionIds: number[] }`
-- **Categories page**: Reorder via `PUT /categories/sort-order` with `{ categories: [{ id, sort_order }] }`
+Uses `@dnd-kit/core` and `@dnd-kit/sortable`:
+- **Questions page**: `PUT /questions/reorder` with `{ questionIds: number[] }`
+- **Categories page**: `PUT /categories/sort-order` with `{ categories: [{ id, sort_order }] }`
 
 Both implement optimistic updates for smooth UX.
-
-### Restaurant Selection
-
-When user has multiple restaurants, a dropdown appears in the header to switch between them. The selected restaurant is persisted in `restaurant-storage` via Zustand. Restaurants are loaded in the dashboard layout to ensure availability across all pages.
 
 ## Deployment (Railway)
 
 ### Production URLs
-- **Frontend**: https://frontend-production.up.railway.app (после `railway domain`)
+- **Frontend**: https://frontend-production.up.railway.app
 - **Backend**: https://lively-possibility-production.up.railway.app
 
 ### Deployment Commands
