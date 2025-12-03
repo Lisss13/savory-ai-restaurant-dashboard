@@ -25,6 +25,8 @@ import type {
   CreateQuestionRequest,
   ReorderQuestionsRequest,
   Subscription,
+  ExtensionRequest,
+  CreateExtensionRequestRequest,
   AdminStats,
   AdminLog,
   Language,
@@ -536,6 +538,39 @@ export const subscriptionApi = {
 
   delete: async (id: number): Promise<ApiResponse<void>> => {
     const response = await apiClient.delete(`/subscriptions/${id}`);
+    return response.data;
+  },
+};
+
+// Extension Request API
+export const extensionRequestApi = {
+  getAll: async (): Promise<ApiResponse<{ requests: ExtensionRequest[] }>> => {
+    const response = await apiClient.get('/subscriptions/extension-requests');
+    return response.data;
+  },
+
+  getMy: async (): Promise<ApiResponse<{ requests: ExtensionRequest[] }>> => {
+    const response = await apiClient.get('/subscriptions/extension-requests/my');
+    return response.data;
+  },
+
+  getById: async (id: number): Promise<ApiResponse<ExtensionRequest>> => {
+    const response = await apiClient.get(`/subscriptions/extension-requests/${id}`);
+    return response.data;
+  },
+
+  getByStatus: async (status: string): Promise<ApiResponse<{ requests: ExtensionRequest[] }>> => {
+    const response = await apiClient.get(`/subscriptions/extension-requests/status/${status}`);
+    return response.data;
+  },
+
+  create: async (data: CreateExtensionRequestRequest): Promise<ApiResponse<ExtensionRequest>> => {
+    const response = await apiClient.post('/subscriptions/extension-requests', data);
+    return response.data;
+  },
+
+  updateStatus: async (id: number, status: string, adminComment?: string): Promise<ApiResponse<ExtensionRequest>> => {
+    const response = await apiClient.patch(`/subscriptions/extension-requests/${id}/status`, { status, adminComment });
     return response.data;
   },
 };

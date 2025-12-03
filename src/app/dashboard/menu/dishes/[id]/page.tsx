@@ -34,17 +34,8 @@ import { dishApi, categoryApi, getImageUrl } from '@/lib/api';
 import { useRestaurantStore } from '@/store/restaurant';
 import { useImageUpload } from '@/hooks/use-image-upload';
 import { NutritionInput } from '@/components/nutrition';
+import { useTranslation } from '@/i18n';
 import type { MenuCategory, NutritionData } from '@/types';
-
-const COMMON_ALLERGENS = [
-  'Глютен',
-  'Молоко',
-  'Яйца',
-  'Орехи',
-  'Рыба',
-  'Соя',
-  'Сульфиты',
-];
 
 const ingredientSchema = z.object({
   name: z.string().min(1, 'Введите название'),
@@ -73,8 +64,20 @@ export default function EditDishPage() {
   const params = useParams();
   const queryClient = useQueryClient();
   const { selectedRestaurant } = useRestaurantStore();
+  const { t } = useTranslation();
   const dishId = Number(params.id);
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
+
+  const COMMON_ALLERGENS = [
+    { key: 'gluten', label: t.menuSection.allergenGluten },
+    { key: 'milk', label: t.menuSection.allergenMilk },
+    { key: 'eggs', label: t.menuSection.allergenEggs },
+    { key: 'nuts', label: t.menuSection.allergenNuts },
+    { key: 'fish', label: t.menuSection.allergenFish },
+    { key: 'soy', label: t.menuSection.allergenSoy },
+    { key: 'sulfites', label: t.menuSection.allergenSulfites },
+  ];
+
   const [nutrition, setNutrition] = useState<NutritionData>({
     calories: 0,
     proteins: 0,
@@ -177,11 +180,11 @@ export default function EditDishPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dishes', dishRestaurantId] });
       queryClient.invalidateQueries({ queryKey: ['dish', dishId] });
-      toast.success('Блюдо обновлено');
+      toast.success(t.menuSection.dishUpdated);
       router.push('/dashboard/menu/dishes');
     },
     onError: () => {
-      toast.error('Ошибка при обновлении блюда');
+      toast.error(t.menuSection.dishUpdateError);
     },
   });
 
@@ -202,10 +205,10 @@ export default function EditDishPage() {
       <>
         <Header
           breadcrumbs={[
-            { title: 'Дашборд', href: '/dashboard' },
-            { title: 'Меню' },
-            { title: 'Блюда', href: '/dashboard/menu/dishes' },
-            { title: 'Редактирование' },
+            { title: t.nav.dashboard, href: '/dashboard' },
+            { title: t.nav.menu },
+            { title: t.nav.dishes, href: '/dashboard/menu/dishes' },
+            { title: t.menuSection.editDishTitle },
           ]}
         />
         <main className="flex-1 space-y-6 p-6">
@@ -229,17 +232,17 @@ export default function EditDishPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Меню' },
-          { title: 'Блюда', href: '/dashboard/menu/dishes' },
-          { title: dish?.name || 'Редактирование' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.menu },
+          { title: t.nav.dishes, href: '/dashboard/menu/dishes' },
+          { title: dish?.name || t.menuSection.editDishTitle },
         ]}
       />
       <main className="flex-1 space-y-6 p-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Редактирование блюда</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t.menuSection.editDishTitle}</h1>
           <p className="text-muted-foreground">
-            Измените информацию о блюде
+            {t.menuSection.editDishInfo}
           </p>
         </div>
 
@@ -248,9 +251,9 @@ export default function EditDishPage() {
             <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Основная информация</CardTitle>
+                  <CardTitle>{t.menuSection.basicInfo}</CardTitle>
                   <CardDescription>
-                    Базовые данные о блюде
+                    {t.menuSection.basicDishData}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -259,7 +262,7 @@ export default function EditDishPage() {
                     name="menuCategoryId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Категория *</FormLabel>
+                        <FormLabel>{t.menuSection.categoryRequired}</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
@@ -267,7 +270,7 @@ export default function EditDishPage() {
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Выберите категорию" />
+                              <SelectValue placeholder={t.menuSection.selectCategory} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -291,9 +294,9 @@ export default function EditDishPage() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Название блюда *</FormLabel>
+                        <FormLabel>{t.menuSection.dishNameRequired}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Карбонара" {...field} />
+                          <Input placeholder={t.menuSection.dishNamePlaceholder} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -305,12 +308,12 @@ export default function EditDishPage() {
                     name="price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Цена (₽) *</FormLabel>
+                        <FormLabel>{t.menuSection.priceRequired} *</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
                             min="0"
-                            placeholder="500"
+                            placeholder={t.menuSection.pricePlaceholder}
                             {...field}
                             onChange={(e) =>
                               field.onChange(parseFloat(e.target.value) || 0)
@@ -327,10 +330,10 @@ export default function EditDishPage() {
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Описание</FormLabel>
+                        <FormLabel>{t.menuSection.dishDescription}</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="Классическая итальянская паста..."
+                            placeholder={t.menuSection.dishDescriptionPlaceholder}
                             className="min-h-[100px]"
                             maxLength={500}
                             {...field}
@@ -353,7 +356,7 @@ export default function EditDishPage() {
                           />
                         </FormControl>
                         <FormLabel className="font-normal">
-                          Блюдо дня
+                          {t.menuSection.dishOfDayLabel}
                         </FormLabel>
                       </FormItem>
                     )}
@@ -364,7 +367,7 @@ export default function EditDishPage() {
                     name="image"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Фото блюда</FormLabel>
+                        <FormLabel>{t.menuSection.dishPhoto}</FormLabel>
                         <FormControl>
                           <div className="space-y-2">
                             {field.value && (
@@ -405,7 +408,7 @@ export default function EditDishPage() {
                                 ) : (
                                   <Upload className="mr-2 h-4 w-4" />
                                 )}
-                                Загрузить фото
+                                {t.menuSection.uploadPhoto}
                               </label>
                             </Button>
                           </div>
@@ -420,9 +423,9 @@ export default function EditDishPage() {
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Пищевая ценность (на 100г)</CardTitle>
+                    <CardTitle>{t.menuSection.nutritionValue}</CardTitle>
                     <CardDescription>
-                      Укажите КБЖУ блюда
+                      {t.menuSection.specifyNutrition}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -432,9 +435,9 @@ export default function EditDishPage() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Ингредиенты</CardTitle>
+                    <CardTitle>{t.menuSection.ingredients}</CardTitle>
                     <CardDescription>
-                      Состав блюда
+                      {t.menuSection.dishComposition}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -446,7 +449,7 @@ export default function EditDishPage() {
                           render={({ field }) => (
                             <FormItem className="flex-1">
                               <FormControl>
-                                <Input placeholder="Название" {...field} />
+                                <Input placeholder={t.menuSection.ingredientName} {...field} />
                               </FormControl>
                             </FormItem>
                           )}
@@ -459,7 +462,7 @@ export default function EditDishPage() {
                               <FormControl>
                                 <Input
                                   type="number"
-                                  placeholder="г"
+                                  placeholder={t.menuSection.ingredientGrams}
                                   {...field}
                                   onChange={(e) =>
                                     field.onChange(parseFloat(e.target.value) || 0)
@@ -487,33 +490,33 @@ export default function EditDishPage() {
                       onClick={() => appendIngredient({ name: '', quantity: 0 })}
                     >
                       <Plus className="mr-2 h-4 w-4" />
-                      Добавить ингредиент
+                      {t.menuSection.addIngredient}
                     </Button>
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Аллергены</CardTitle>
+                    <CardTitle>{t.menuSection.allergens}</CardTitle>
                     <CardDescription>
-                      Выберите аллергены
+                      {t.menuSection.selectAllergens}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
                       {COMMON_ALLERGENS.map((allergen) => (
                         <Button
-                          key={allergen}
+                          key={allergen.key}
                           type="button"
                           variant={
-                            selectedAllergens.includes(allergen)
+                            selectedAllergens.includes(allergen.label)
                               ? 'default'
                               : 'outline'
                           }
                           size="sm"
-                          onClick={() => toggleAllergen(allergen)}
+                          onClick={() => toggleAllergen(allergen.label)}
                         >
-                          {allergen}
+                          {allergen.label}
                         </Button>
                       ))}
                     </div>
@@ -528,13 +531,13 @@ export default function EditDishPage() {
                 variant="outline"
                 onClick={() => router.back()}
               >
-                Отмена
+                {t.common.cancel}
               </Button>
               <Button type="submit" disabled={updateMutation.isPending}>
                 {updateMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Сохранить изменения
+                {t.menuSection.saveDishChanges}
               </Button>
             </div>
           </form>

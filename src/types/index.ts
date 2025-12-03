@@ -316,6 +316,39 @@ export interface Subscription {
   daysLeft: number;
 }
 
+// Extension Request types
+export type ExtensionRequestStatus = 'pending' | 'approved' | 'rejected' | 'completed';
+
+export interface ExtensionRequest {
+  id: number;
+  createdAt: string;
+  organization?: {
+    id: number;
+    name: string;
+    phone: string;
+  };
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  name: string;
+  phone: string;
+  email: string;
+  period?: number;
+  comment?: string;
+  status: ExtensionRequestStatus;
+  adminComment?: string;
+}
+
+export interface CreateExtensionRequestRequest {
+  name: string;
+  phone: string;
+  email: string;
+  period?: number;
+  comment?: string;
+}
+
 // Admin types
 export interface AdminStats {
   totalUsers: number;
