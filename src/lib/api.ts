@@ -379,6 +379,11 @@ export const reservationApi = {
     const response = await apiClient.delete(`/reservations/${id}`);
     return response.data;
   },
+
+  getBySession: async (sessionId: number): Promise<ApiResponse<{ reservations: Reservation[] }>> => {
+    const response = await apiClient.get(`/reservations/session/${sessionId}`);
+    return response.data;
+  },
 };
 
 // Chat API
@@ -389,7 +394,7 @@ export const chatApi = {
     return response.data;
   },
 
-  getTableSessionMessages: async (sessionId: number): Promise<ApiResponse<{ messages: ChatMessage[] }>> => {
+  getTableSessionMessages: async (sessionId: number): Promise<ApiResponse<ChatMessage[]>> => {
     const response = await apiClient.get(`/chat/table/session/${sessionId}/messages`);
     return response.data;
   },
@@ -410,7 +415,7 @@ export const chatApi = {
     return response.data;
   },
 
-  getRestaurantSessionMessages: async (sessionId: number): Promise<ApiResponse<{ messages: ChatMessage[] }>> => {
+  getRestaurantSessionMessages: async (sessionId: number): Promise<ApiResponse<ChatMessage[]>> => {
     const response = await apiClient.get(`/chat/restaurant/session/${sessionId}/messages`);
     return response.data;
   },

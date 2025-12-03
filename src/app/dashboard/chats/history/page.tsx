@@ -11,7 +11,6 @@ import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -61,8 +60,7 @@ export default function ChatHistoryPage() {
     const matchesType = chatType === 'all' ||
       (chatType === 'table' && session.table) ||
       (chatType === 'restaurant' && !session.table);
-    const isClosed = session.status === 'closed';
-    return matchesSearch && matchesType && isClosed;
+    return matchesSearch && matchesType;
   }) || [];
 
   if (!selectedRestaurant) {
@@ -85,6 +83,9 @@ export default function ChatHistoryPage() {
       </>
     );
   }
+
+  console.log('sessions', sessions);
+  console.log('filteredSessions', filteredSessions);
 
   return (
     <>
@@ -152,10 +153,7 @@ export default function ChatHistoryPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>ID</TableHead>
-                    <TableHead>{t.chatsSection.type}</TableHead>
-                    <TableHead>{t.chatsSection.table}</TableHead>
-                    <TableHead>{t.chatsSection.started}</TableHead>
-                    <TableHead>{t.chatsSection.completed}</TableHead>
+                    <TableHead>{t.chatsSection.date}</TableHead>
                     <TableHead>{t.chatsSection.messagesCount}</TableHead>
                     <TableHead className="w-[100px]"></TableHead>
                   </TableRow>
@@ -165,26 +163,14 @@ export default function ChatHistoryPage() {
                     <TableRow key={session.id}>
                       <TableCell className="font-medium">#{session.id}</TableCell>
                       <TableCell>
-                        <Badge variant={session.table ? 'default' : 'secondary'}>
-                          {session.table ? t.chatsSection.table : t.chatsSection.restaurant}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{session.table?.name || '—'}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm">
-                          <Calendar className="h-3 w-3" />
-                          {format(new Date(session.createdAt), 'd MMM HH:mm', { locale: ru })}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {session.closedAt ? (
+                        {session.lastActive && !isNaN(new Date(session.lastActive).getTime()) ? (
                           <div className="flex items-center gap-1 text-sm">
                             <Calendar className="h-3 w-3" />
-                            {format(new Date(session.closedAt), 'd MMM HH:mm', { locale: ru })}
+                            {format(new Date(session.lastActive), 'd MMM HH:mm', { locale: ru })}
                           </div>
                         ) : '—'}
                       </TableCell>
-                      <TableCell>{session.messageCount || 0}</TableCell>
+                      <TableCell>{session.messages?.length || 0}</TableCell>
                       <TableCell>
                         <TooltipProvider>
                           <Tooltip>

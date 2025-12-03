@@ -516,6 +516,30 @@ export const ru = {
     orderBeingPrepared: 'Ваш заказ готовится',
     tableReserved: 'Столик забронирован, ждём вас!',
     thankYou: 'Спасибо за обращение!',
+    waitAMoment: 'Минутку, уточню информацию',
+    sorryNotPossible: 'К сожалению, это невозможно',
+    quickReplies: 'Быстрые ответы',
+    // Chat session page
+    chatSession: 'Чат',
+    viewAndManage: 'Просмотр и управление чат-сессией',
+    noMessagesInChat: 'Нет сообщений в этом чате',
+    statistics: 'Статистика',
+    fromGuest: 'От гостя',
+    fromAi: 'От AI',
+    totalMessages: 'Всего сообщений',
+    time: 'Время',
+    chatStarted: 'Начат',
+    lastMessage: 'Последнее',
+    guest: 'Гость',
+    aiBot: 'AI-бот',
+    staffMember: 'Персонал',
+    system: 'Система',
+    chatInfo: 'Информация о чате',
+    // Reservations in chat
+    reservationsInChat: 'Бронирования в чате',
+    noReservationsInChat: 'Нет бронирований в этом чате',
+    reservationCreated: 'Создано бронирование',
+    guestsCount: 'гостей',
     // History page
     chatHistory: 'История чатов',
     archiveOfChatSessions: 'Архив завершённых чат-сессий',
@@ -534,6 +558,7 @@ export const ru = {
     openChatHistory: 'Открыть историю чата',
     selectRestaurantToView: 'Выберите ресторан для просмотра истории чатов',
     selectRestaurantForChats: 'Для просмотра чатов необходимо выбрать ресторан',
+    date: "Дата"
   },
 
   // Questions

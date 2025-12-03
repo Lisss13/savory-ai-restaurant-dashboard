@@ -4,8 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { ru } from 'date-fns/locale';
+import { ru, enUS } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { useTranslation } from '@/i18n';
+import { useLanguageStore } from '@/store/language';
 import {
   MessageSquare,
   Send,
@@ -16,6 +18,8 @@ import {
   CalendarPlus,
   X,
   Clock,
+  Calendar,
+  Users,
 } from 'lucide-react';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
@@ -26,25 +30,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { chatApi } from '@/lib/api';
-import type { ChatMessage } from '@/types';
-
-const QUICK_REPLIES = [
-  { text: 'Сейчас подойдёт официант', icon: '👨‍🍳' },
-  { text: 'Ваш заказ готовится', icon: '🍳' },
-  { text: 'Столик забронирован, ждём вас!', icon: '✅' },
-  { text: 'Спасибо за обращение!', icon: '🙏' },
-  { text: 'Минутку, уточню информацию', icon: '⏳' },
-  { text: 'К сожалению, это невозможно', icon: '😔' },
-];
+import { chatApi, reservationApi } from '@/lib/api';
+import type { ChatMessage, Reservation } from '@/types';
 
 export default function ChatSessionPage() {
+  const { t } = useTranslation();
+  const { language } = useLanguageStore();
+  const dateLocale = language === 'ru' ? ru : enUS;
+
   const params = useParams();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -53,43 +46,74 @@ export default function ChatSessionPage() {
   const [message, setMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Получаем сообщения чата
+  // Quick replies with translations
+  const QUICK_REPLIES = [
+    { text: t.chatsSection.waiterComing, icon: '👨‍🍳' },
+    { text: t.chatsSection.orderBeingPrepared, icon: '🍳' },
+    { text: t.chatsSection.tableReserved, icon: '✅' },
+    { text: t.chatsSection.thankYou, icon: '🙏' },
+    { text: t.chatsSection.waitAMoment, icon: '⏳' },
+    { text: t.chatsSection.sorryNotPossible, icon: '😔' },
+  ];
+
+  // Get chat messages
   const { data: messages, isLoading: messagesLoading } = useQuery({
     queryKey: ['chatMessages', sessionId],
     queryFn: async () => {
       const response = await chatApi.getRestaurantSessionMessages(sessionId);
-      return response.data.messages || [];
+      // Handle both array directly and { messages: [...] } formats
+      const data = response.data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return Array.isArray(data) ? data : ((data as any)?.messages || []);
     },
     enabled: !!sessionId,
-    refetchInterval: 5000, // Обновляем каждые 5 секунд
+    refetchInterval: 5000,
   });
 
-  // Отправка сообщения
+  // Get reservations for this session
+  const { data: reservationsData } = useQuery({
+    queryKey: ['sessionReservations', sessionId],
+    queryFn: async () => {
+      try {
+        const response = await reservationApi.getBySession(sessionId);
+        return response.data.reservations || [];
+      } catch {
+        return [];
+      }
+    },
+    enabled: !!sessionId,
+    refetchInterval: 10000,
+  });
+
+  const reservations = reservationsData || [];
+
+  // Send message mutation
   const sendMutation = useMutation({
     mutationFn: (content: string) => chatApi.sendRestaurantMessage(sessionId, content),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chatMessages', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['sessionReservations', sessionId] });
       setMessage('');
     },
     onError: () => {
-      toast.error('Ошибка отправки сообщения');
+      toast.error(t.chatsSection.sendError);
     },
   });
 
-  // Закрытие чата
+  // Close chat mutation
   const closeMutation = useMutation({
     mutationFn: () => chatApi.closeRestaurantSession(sessionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chatSessions'] });
-      toast.success('Чат закрыт');
+      toast.success(t.chatsSection.chatClosed);
       router.push('/dashboard/chats/active');
     },
     onError: () => {
-      toast.error('Ошибка закрытия чата');
+      toast.error(t.chatsSection.chatCloseError);
     },
   });
 
-  // Прокрутка к последнему сообщению
+  // Scroll to last message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -132,17 +156,32 @@ export default function ChatSessionPage() {
   const getAuthorLabel = (authorType: string) => {
     switch (authorType) {
       case 'user':
-        return 'Гость';
+        return t.chatsSection.guest;
       case 'bot':
-        return 'AI-бот';
+        return t.chatsSection.aiBot;
       case 'restaurant':
-        return 'Персонал';
+        return t.chatsSection.staffMember;
       default:
-        return 'Система';
+        return t.chatsSection.system;
     }
   };
 
-  // Подсчёт статистики чата
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'confirmed':
+        return <Badge variant="default" className="bg-green-500">{t.reservations.confirmed}</Badge>;
+      case 'cancelled':
+        return <Badge variant="destructive">{t.reservations.cancelled}</Badge>;
+      case 'pending':
+        return <Badge variant="secondary">{t.reservations.pending}</Badge>;
+      case 'completed':
+        return <Badge variant="outline">{t.reservations.completed}</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  // Chat statistics
   const chatStats = {
     totalMessages: messages?.length || 0,
     userMessages: messages?.filter((m: ChatMessage) => m.authorType === 'user').length || 0,
@@ -155,9 +194,9 @@ export default function ChatSessionPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Чаты', href: '/dashboard/chats/active' },
-          { title: `Чат #${sessionId}` },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.chats, href: '/dashboard/chats/active' },
+          { title: `${t.chatsSection.chatSession} #${sessionId}` },
         ]}
       />
       <main className="flex-1 p-6">
@@ -166,9 +205,11 @@ export default function ChatSessionPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">Чат #{sessionId}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {t.chatsSection.chatSession} #{sessionId}
+            </h1>
             <p className="text-muted-foreground">
-              Просмотр и управление чат-сессией
+              {t.chatsSection.viewAndManage}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -178,7 +219,7 @@ export default function ChatSessionPage() {
               disabled={closeMutation.isPending}
             >
               <X className="mr-2 h-4 w-4" />
-              Закрыть чат
+              {t.chatsSection.closeChat}
             </Button>
           </div>
         </div>
@@ -189,7 +230,7 @@ export default function ChatSessionPage() {
             <CardHeader className="py-3 border-b">
               <div className="flex items-center justify-end">
                 <p className="text-sm text-muted-foreground">
-                  {chatStats.totalMessages} сообщений
+                  {chatStats.totalMessages} {t.chatsSection.messagesCount}
                 </p>
               </div>
             </CardHeader>
@@ -204,7 +245,7 @@ export default function ChatSessionPage() {
                 ) : messages?.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                     <MessageSquare className="h-12 w-12 mb-4" />
-                    <p>Нет сообщений в этом чате</p>
+                    <p>{t.chatsSection.noMessagesInChat}</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -234,7 +275,7 @@ export default function ChatSessionPage() {
                           </div>
                           <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                           <p className="text-xs text-muted-foreground mt-2">
-                            {format(new Date(msg.sentAt), 'HH:mm:ss', { locale: ru })}
+                            {format(new Date(msg.sentAt), 'HH:mm:ss', { locale: dateLocale })}
                           </p>
                         </div>
                         {msg.authorType !== 'user' && (
@@ -259,7 +300,7 @@ export default function ChatSessionPage() {
 
               {/* Quick replies */}
               <div className="px-4 py-2 border-t bg-muted/30">
-                <p className="text-xs text-muted-foreground mb-2">Быстрые ответы:</p>
+                <p className="text-xs text-muted-foreground mb-2">{t.chatsSection.quickReplies}:</p>
                 <div className="flex flex-wrap gap-2">
                   {QUICK_REPLIES.map((reply) => (
                     <Button
@@ -281,7 +322,7 @@ export default function ChatSessionPage() {
               <div className="p-4 border-t">
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Введите сообщение..."
+                    placeholder={t.chatsSection.typeMessage}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyDown={(e) => {
@@ -305,56 +346,102 @@ export default function ChatSessionPage() {
           </Card>
 
           {/* Info Panel */}
-          <Card className="col-span-4">
+          <Card className="col-span-4 overflow-hidden">
             <CardHeader>
-              <CardTitle className="text-lg">Информация о чате</CardTitle>
+              <CardTitle className="text-lg">{t.chatsSection.chatInfo}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Статистика */}
+            <CardContent className="space-y-6 overflow-auto max-h-[calc(100vh-320px)]">
+              {/* Statistics */}
               <div className="space-y-3">
-                <p className="text-sm font-medium">Статистика</p>
+                <p className="text-sm font-medium">{t.chatsSection.statistics}</p>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="p-3 rounded-lg bg-muted/50 text-center">
                     <p className="text-xl font-bold">{chatStats.userMessages}</p>
-                    <p className="text-xs text-muted-foreground">От гостя</p>
+                    <p className="text-xs text-muted-foreground">{t.chatsSection.fromGuest}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-center">
                     <p className="text-xl font-bold text-blue-600">{chatStats.botMessages}</p>
-                    <p className="text-xs text-muted-foreground">От AI</p>
+                    <p className="text-xs text-muted-foreground">{t.chatsSection.fromAi}</p>
                   </div>
                 </div>
                 <div className="p-3 rounded-lg bg-muted/50 text-center">
                   <p className="text-xl font-bold">{chatStats.totalMessages}</p>
-                  <p className="text-xs text-muted-foreground">Всего сообщений</p>
+                  <p className="text-xs text-muted-foreground">{t.chatsSection.totalMessages}</p>
                 </div>
               </div>
 
               <Separator />
 
-              {/* Время */}
+              {/* Time */}
               <div className="space-y-3">
-                <p className="text-sm font-medium">Время</p>
+                <p className="text-sm font-medium">{t.chatsSection.time}</p>
                 {chatStats.startTime && (
                   <div className="flex items-center gap-2 text-sm">
                     <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Начат:</span>
-                    <span>{format(new Date(chatStats.startTime), 'd MMM yyyy HH:mm', { locale: ru })}</span>
+                    <span className="text-muted-foreground">{t.chatsSection.chatStarted}:</span>
+                    <span>{format(new Date(chatStats.startTime), 'd MMM yyyy HH:mm', { locale: dateLocale })}</span>
                   </div>
                 )}
                 {chatStats.lastMessageTime && (
                   <div className="flex items-center gap-2 text-sm">
                     <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Последнее:</span>
-                    <span>{format(new Date(chatStats.lastMessageTime), 'HH:mm:ss', { locale: ru })}</span>
+                    <span className="text-muted-foreground">{t.chatsSection.lastMessage}:</span>
+                    <span>{format(new Date(chatStats.lastMessageTime), 'HH:mm:ss', { locale: dateLocale })}</span>
                   </div>
                 )}
               </div>
 
               <Separator />
 
-              {/* Быстрые действия */}
+              {/* Reservations */}
               <div className="space-y-3">
-                <p className="text-sm font-medium">Быстрые действия</p>
+                <p className="text-sm font-medium">{t.chatsSection.reservationsInChat}</p>
+                {reservations.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t.chatsSection.noReservationsInChat}</p>
+                ) : (
+                  <div className="space-y-3">
+                    {reservations.map((reservation: Reservation) => (
+                      <div
+                        key={reservation.id}
+                        className="p-3 rounded-lg border bg-card"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium text-sm">#{reservation.id}</span>
+                          {getStatusBadge(reservation.status)}
+                        </div>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-3 w-3 text-muted-foreground" />
+                            <span>
+                              {format(new Date(reservation.reservation_date), 'd MMM yyyy', { locale: dateLocale })} {reservation.start_time}
+                            </span>
+                          </div>
+                          {reservation.table_name && (
+                            <div className="flex items-center gap-2">
+                              <Building2 className="h-3 w-3 text-muted-foreground" />
+                              <span>{reservation.table_name}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <Users className="h-3 w-3 text-muted-foreground" />
+                            <span>{reservation.guest_count} {t.chatsSection.guestsCount}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <User className="h-3 w-3 text-muted-foreground" />
+                            <span>{reservation.customer_name}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Quick actions */}
+              <div className="space-y-3">
+                <p className="text-sm font-medium">{t.chatsSection.quickActions}</p>
                 <div className="space-y-2">
                   <Button
                     variant="outline"
@@ -363,11 +450,10 @@ export default function ChatSessionPage() {
                     onClick={() => router.push('/dashboard/reservations/list?create=true')}
                   >
                     <CalendarPlus className="mr-2 h-4 w-4" />
-                    Создать бронирование
+                    {t.chatsSection.createReservation}
                   </Button>
                 </div>
               </div>
-
             </CardContent>
           </Card>
         </div>

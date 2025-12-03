@@ -518,6 +518,30 @@ export const en: Translations = {
     orderBeingPrepared: 'Your order is being prepared',
     tableReserved: 'Table reserved, we are waiting for you!',
     thankYou: 'Thank you for contacting us!',
+    waitAMoment: 'One moment, let me check',
+    sorryNotPossible: 'Unfortunately, this is not possible',
+    quickReplies: 'Quick replies',
+    // Chat session page
+    chatSession: 'Chat',
+    viewAndManage: 'View and manage chat session',
+    noMessagesInChat: 'No messages in this chat',
+    statistics: 'Statistics',
+    fromGuest: 'From guest',
+    fromAi: 'From AI',
+    totalMessages: 'Total messages',
+    time: 'Time',
+    chatStarted: 'Started',
+    lastMessage: 'Last message',
+    guest: 'Guest',
+    aiBot: 'AI bot',
+    staffMember: 'Staff',
+    system: 'System',
+    chatInfo: 'Chat information',
+    // Reservations in chat
+    reservationsInChat: 'Reservations in chat',
+    noReservationsInChat: 'No reservations in this chat',
+    reservationCreated: 'Reservation created',
+    guestsCount: 'guests',
     // History page
     chatHistory: 'Chat history',
     archiveOfChatSessions: 'Archive of completed chat sessions',
@@ -536,6 +560,7 @@ export const en: Translations = {
     openChatHistory: 'Open chat history',
     selectRestaurantToView: 'Select a restaurant to view chat history',
     selectRestaurantForChats: 'Select a restaurant to view chats',
+    date: 'Date',
   },
 
   // Questions

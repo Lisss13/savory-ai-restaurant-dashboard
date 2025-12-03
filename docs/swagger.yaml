@@ -1186,7 +1186,7 @@ components:
 
     ChatSessionResponse:
       type: object
-      description: Чат-сессия
+      description: Чат-сессия столика
       properties:
         id:
           type: integer
@@ -1210,6 +1210,51 @@ components:
           description: Сообщения в сессии
           items:
             $ref: '#/components/schemas/ChatMessageResponse'
+
+    TableChatSessionsResponse:
+      type: object
+      description: Список чат-сессий столика
+      properties:
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatSessionResponse'
+
+    RestaurantChatSessionResponse:
+      type: object
+      description: Чат-сессия ресторана
+      properties:
+        id:
+          type: integer
+        active:
+          type: boolean
+          description: Активна ли сессия
+        lastActive:
+          type: string
+          format: date-time
+          description: Время последней активности
+        restaurant:
+          type: object
+          description: Ресторан
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+        messages:
+          type: array
+          description: Сообщения в сессии
+          items:
+            $ref: '#/components/schemas/ChatMessageResponse'
+
+    RestaurantChatSessionsResponse:
+      type: object
+      description: Список чат-сессий ресторана
+      properties:
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RestaurantChatSessionResponse'
 
     # ==================== Subscription ====================
     SubscriptionResponse:
@@ -3957,9 +4002,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/ChatSessionResponse'
+                        $ref: '#/components/schemas/TableChatSessionsResponse'
 
   # ==================== Chat - Restaurant endpoints ====================
   /chat/restaurant/{restaurant_id}:
@@ -4107,9 +4150,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/ChatSessionResponse'
+                        $ref: '#/components/schemas/RestaurantChatSessionsResponse'
         '404':
           description: Сессии чата для данного ресторана не найдены
 
@@ -4190,6 +4231,38 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/CustomerReservationsResponse'
+
+  /reservations/session/{session_id}:
+    get:
+      tags:
+        - Reservation
+      summary: Получить бронирования по ID чат-сессии
+      description: |
+        Возвращает список бронирований, созданных в указанной чат-сессии.
+        **Публичный эндпоинт** - не требует авторизации.
+        Используется для проверки наличия бронирования в текущей сессии чата.
+      operationId: getReservationsByChatSessionID
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: ID чат-сессии
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список бронирований сессии
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CustomerReservationsResponse'
+        '400':
+          description: Невалидный ID сессии
 
   /reservations:
     post:

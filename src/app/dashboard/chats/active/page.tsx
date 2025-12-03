@@ -4,9 +4,10 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
-import { ru } from 'date-fns/locale';
+import { ru, enUS } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useTranslation } from '@/i18n';
+import { useLanguageStore } from '@/store/language';
 import {
   MessageSquare,
   Send,
@@ -18,6 +19,8 @@ import {
   ExternalLink,
   Circle,
   Bell,
+  Calendar,
+  Users,
 } from 'lucide-react';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
@@ -35,14 +38,16 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { chatApi } from '@/lib/api';
+import { chatApi, reservationApi } from '@/lib/api';
 import { useRestaurantStore } from '@/store/restaurant';
-import type { ChatSession, ChatMessage } from '@/types';
+import type { ChatSession, ChatMessage, Reservation } from '@/types';
 
 type ChatFilter = 'all' | 'active' | 'closed';
 
 export default function ActiveChatsPage() {
   const { t } = useTranslation();
+  const { language } = useLanguageStore();
+  const dateLocale = language === 'ru' ? ru : enUS;
   const router = useRouter();
   const queryClient = useQueryClient();
   const { selectedRestaurant } = useRestaurantStore();
@@ -134,17 +139,39 @@ export default function ActiveChatsPage() {
     queryFn: async () => {
       if (!selectedSession) return [];
       const response = await chatApi.getRestaurantSessionMessages(selectedSession.id);
-      return response.data.messages || [];
+      // Handle both array directly and { messages: [...] } formats
+      const data = response.data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return Array.isArray(data) ? data : ((data as any)?.messages || []);
     },
     enabled: !!selectedSession,
     refetchInterval: 5000,
   });
+
+  // Get reservations for selected session
+  const { data: reservationsData } = useQuery({
+    queryKey: ['sessionReservations', selectedSession?.id],
+    queryFn: async () => {
+      if (!selectedSession) return [];
+      try {
+        const response = await reservationApi.getBySession(selectedSession.id);
+        return response.data.reservations || [];
+      } catch {
+        return [];
+      }
+    },
+    enabled: !!selectedSession,
+    refetchInterval: 10000,
+  });
+
+  const reservations = reservationsData || [];
 
   const sendMutation = useMutation({
     mutationFn: (content: string) =>
       chatApi.sendRestaurantMessage(selectedSession!.id, content),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chatMessages'] });
+      queryClient.invalidateQueries({ queryKey: ['sessionReservations'] });
       setMessage('');
     },
     onError: () => {
@@ -350,7 +377,7 @@ export default function ActiveChatsPage() {
                         <div className="flex items-center justify-between mt-1">
                           <p className="text-xs text-muted-foreground">
                             {session.lastActive && !isNaN(new Date(session.lastActive).getTime())
-                              ? format(new Date(session.lastActive), 'HH:mm', { locale: ru })
+                              ? format(new Date(session.lastActive), 'HH:mm', { locale: dateLocale })
                               : '—'}
                           </p>
                           <p className="text-xs text-muted-foreground">
@@ -502,11 +529,11 @@ export default function ActiveChatsPage() {
           </Card>
 
           {/* Info Panel */}
-          <Card className="col-span-3">
+          <Card className="col-span-3 overflow-hidden">
             <CardHeader>
               <CardTitle className="text-lg">{t.chatsSection.information}</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-auto max-h-[calc(100vh-320px)]">
               {selectedSession ? (
                 <div className="space-y-4">
                   <div>
@@ -514,6 +541,58 @@ export default function ActiveChatsPage() {
                     <p className="font-medium">
                       {selectedSession.table?.name || t.chatsSection.generalChat}
                     </p>
+                  </div>
+
+                  <Separator />
+
+                  {/* Reservations in chat */}
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium">{t.chatsSection.reservationsInChat}</p>
+                    {reservations.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">{t.chatsSection.noReservationsInChat}</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {reservations.map((reservation: Reservation) => (
+                          <div
+                            key={reservation.id}
+                            className="p-2 rounded-lg border bg-card text-sm"
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-medium">#{reservation.id}</span>
+                              <Badge
+                                variant={
+                                  reservation.status === 'confirmed' ? 'default' :
+                                  reservation.status === 'cancelled' ? 'destructive' :
+                                  'secondary'
+                                }
+                                className={reservation.status === 'confirmed' ? 'bg-green-500' : ''}
+                              >
+                                {reservation.status === 'confirmed' ? t.reservations.confirmed :
+                                 reservation.status === 'cancelled' ? t.reservations.cancelled :
+                                 reservation.status === 'pending' ? t.reservations.pending :
+                                 reservation.status}
+                              </Badge>
+                            </div>
+                            <div className="space-y-1 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                <span>
+                                  {format(new Date(reservation.reservation_date), 'd MMM', { locale: dateLocale })} {reservation.start_time}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                <span>{reservation.guest_count} {t.chatsSection.guestsCount}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                <span>{reservation.customer_name}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <Separator />
