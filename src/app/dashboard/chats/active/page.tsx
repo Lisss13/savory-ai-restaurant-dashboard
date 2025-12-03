@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
@@ -36,9 +36,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { chatApi } from '@/lib/api';
 import { useRestaurantStore } from '@/store/restaurant';
 import type { ChatSession, ChatMessage } from '@/types';
+
+type ChatFilter = 'all' | 'active' | 'closed';
 
 export default function ActiveChatsPage() {
   const { t } = useTranslation();
@@ -55,18 +58,43 @@ export default function ActiveChatsPage() {
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
   const [message, setMessage] = useState('');
   const [isAiEnabled, setIsAiEnabled] = useState(true);
+  const [chatFilter, setChatFilter] = useState<ChatFilter>('active');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { data: sessions, isLoading } = useQuery({
+  const { data: allSessions, isLoading } = useQuery({
     queryKey: ['chatSessions', selectedRestaurant?.id],
     queryFn: async () => {
       if (!selectedRestaurant) return [];
       const response = await chatApi.getRestaurantSessions(selectedRestaurant.id);
-      return response.data.sessions?.filter((s: ChatSession) => s.active) || [];
+      // Handle both wrapped { sessions: [...] } and direct array responses
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rawData = response.data as any;
+      return (rawData?.sessions || (Array.isArray(rawData) ? rawData : [])) as ChatSession[];
     },
     enabled: !!selectedRestaurant,
     refetchInterval: 10000,
   });
+
+  // Helper to check if session is active
+  const isSessionActive = (s: ChatSession) =>
+    s.active === true ||
+    s.status === 'active' ||
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (s as any).is_active === true;
+
+  // Filter sessions based on selected filter
+  const sessions = useMemo(() => {
+    if (!allSessions) return [];
+    switch (chatFilter) {
+      case 'active':
+        return allSessions.filter(isSessionActive);
+      case 'closed':
+        return allSessions.filter((s) => !isSessionActive(s));
+      case 'all':
+      default:
+        return allSessions;
+    }
+  }, [allSessions, chatFilter]);
 
   const { data: messages, isLoading: messagesLoading } = useQuery({
     queryKey: ['chatMessages', selectedSession?.id],
@@ -215,7 +243,7 @@ export default function ActiveChatsPage() {
         <div className="grid grid-cols-12 gap-6 h-[calc(100vh-220px)]">
           {/* Chat List */}
           <Card className="col-span-3">
-            <CardHeader className="py-3">
+            <CardHeader className="py-3 space-y-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">
                   {t.chatsSection.chatsCount} ({sessions?.length || 0})
@@ -233,9 +261,22 @@ export default function ActiveChatsPage() {
                   </TooltipProvider>
                 )}
               </div>
+              <Tabs value={chatFilter} onValueChange={(v) => setChatFilter(v as ChatFilter)}>
+                <TabsList className="w-full">
+                  <TabsTrigger value="active" className="flex-1 text-xs">
+                    {t.chatsSection.filterActive}
+                  </TabsTrigger>
+                  <TabsTrigger value="closed" className="flex-1 text-xs">
+                    {t.chatsSection.filterClosed}
+                  </TabsTrigger>
+                  <TabsTrigger value="all" className="flex-1 text-xs">
+                    {t.chatsSection.filterAll}
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </CardHeader>
             <CardContent className="p-0">
-              <ScrollArea className="h-[calc(100vh-340px)]">
+              <ScrollArea className="h-[calc(100vh-400px)]">
                 {isLoading ? (
                   <div className="p-4 space-y-4">
                     {[...Array(5)].map((_, i) => (
@@ -245,7 +286,7 @@ export default function ActiveChatsPage() {
                 ) : sessions?.length === 0 ? (
                   <div className="p-4 text-center text-muted-foreground">
                     <MessageSquare className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                    <p>{t.chatsSection.noActiveChats}</p>
+                    <p>{t.chatsSection.noChatsFound}</p>
                   </div>
                 ) : (
                   <div className="divide-y">

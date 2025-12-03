@@ -506,6 +506,11 @@ export const ru = {
     sendError: 'Ошибка отправки сообщения',
     chatClosed: 'Чат закрыт',
     chatCloseError: 'Ошибка закрытия чата',
+    // Chat filter
+    filterAll: 'Все',
+    filterActive: 'Активные',
+    filterClosed: 'Закрытые',
+    noChatsFound: 'Нет чатов',
     // Quick replies
     waiterComing: 'Сейчас подойдёт официант',
     orderBeingPrepared: 'Ваш заказ готовится',

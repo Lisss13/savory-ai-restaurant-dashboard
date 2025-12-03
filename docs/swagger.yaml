@@ -584,33 +584,47 @@ components:
 
     UpdateRestaurantRequest:
       type: object
-      description: Запрос на обновление ресторана
-      required:
-        - organization_id
-        - name
-        - address
-        - phone
+      description: |
+        Запрос на обновление ресторана.
+        Поддерживает partial update - передавайте только те поля, которые нужно обновить.
+        OrganizationID определяется автоматически из JWT токена.
       properties:
-        organization_id:
-          type: integer
         name:
           type: string
+          minLength: 1
+          description: Название ресторана
         address:
           type: string
+          minLength: 1
+          description: Адрес ресторана
         phone:
           type: string
+          minLength: 1
+          description: Телефон ресторана
         website:
           type: string
+          description: Веб-сайт ресторана
         description:
           type: string
+          description: Описание ресторана
         image_url:
           type: string
+          description: URL изображения ресторана
+        menu:
+          type: string
+          description: Меню ресторана (текст или ссылка)
         currency:
           type: string
           description: Валюта для цен (ISO 4217)
           minLength: 3
           maxLength: 3
           example: "EUR"
+        reservation_duration:
+          type: integer
+          description: Длительность бронирования в минутах (30-480)
+          minimum: 30
+          maximum: 480
+          example: 90
 
     # ==================== Table ====================
     TableResponse:
@@ -2685,11 +2699,11 @@ paths:
                         $ref: '#/components/schemas/RestaurantResponse'
         '404':
           description: Ресторан не найден
-    put:
+    patch:
       tags:
         - Restaurant
       summary: Обновить ресторан
-      description: Полностью обновляет данные ресторана.
+      description: Частично обновляет данные ресторана (partial update). Передавайте только те поля, которые нужно изменить.
       operationId: updateRestaurant
       security:
         - BearerAuth: []
@@ -2709,6 +2723,8 @@ paths:
       responses:
         '200':
           description: Ресторан обновлён
+        '403':
+          description: Доступ запрещён - ресторан принадлежит другой организации
         '404':
           description: Ресторан не найден
     delete:
@@ -4094,6 +4110,8 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/ChatSessionResponse'
+        '404':
+          description: Сессии чата для данного ресторана не найдены
 
   # ==================== Reservation ====================
   # Public Reservation API (без авторизации)

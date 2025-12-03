@@ -508,6 +508,11 @@ export const en: Translations = {
     sendError: 'Error sending message',
     chatClosed: 'Chat closed',
     chatCloseError: 'Error closing chat',
+    // Chat filter
+    filterAll: 'All',
+    filterActive: 'Active',
+    filterClosed: 'Closed',
+    noChatsFound: 'No chats',
     // Quick replies
     waiterComing: 'A waiter will be right with you',
     orderBeingPrepared: 'Your order is being prepared',
