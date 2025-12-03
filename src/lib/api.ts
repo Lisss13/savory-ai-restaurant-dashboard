@@ -8,6 +8,7 @@ import type {
   Organization,
   Restaurant,
   CreateRestaurantRequest,
+  UpdateRestaurantRequest,
   Table,
   CreateTableRequest,
   MenuCategory,
@@ -206,7 +207,7 @@ export const restaurantApi = {
     return response.data;
   },
 
-  update: async (id: number, data: Partial<Omit<CreateRestaurantRequest, 'organization_id'>>): Promise<ApiResponse<Restaurant>> => {
+  update: async (id: number, data: UpdateRestaurantRequest): Promise<ApiResponse<Restaurant>> => {
     const response = await apiClient.patch(`/restaurants/${id}`, data);
     return response.data;
   },

@@ -12,7 +12,6 @@ import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -54,7 +53,6 @@ const dishSchema = z.object({
   fats: z.number().min(0).max(999).optional(),
   carbohydrates: z.number().min(0).max(999).optional(),
   ingredients: z.array(ingredientSchema).min(1, 'Добавьте хотя бы один ингредиент'),
-  isDishOfDay: z.boolean(),
 });
 
 type DishFormValues = z.infer<typeof dishSchema>;
@@ -119,7 +117,6 @@ export default function EditDishPage() {
       fats: 0,
       carbohydrates: 0,
       ingredients: [{ name: '', quantity: 0 }],
-      isDishOfDay: false,
     },
   });
 
@@ -148,7 +145,6 @@ export default function EditDishPage() {
         ingredients: dish.ingredients?.length
           ? dish.ingredients.map((i) => ({ name: i.name, quantity: i.quantity }))
           : [{ name: '', quantity: 0 }],
-        isDishOfDay: dish.isDishOfDay || false,
       });
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setNutrition({
@@ -340,24 +336,6 @@ export default function EditDishPage() {
                           />
                         </FormControl>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="isDishOfDay"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          {t.menuSection.dishOfDayLabel}
-                        </FormLabel>
                       </FormItem>
                     )}
                   />

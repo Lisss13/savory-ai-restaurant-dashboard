@@ -298,13 +298,7 @@ export default function DishesPage() {
                           size="icon"
                           onClick={() => dishOfDayMutation.mutate(dish.id)}
                         >
-                          <Star
-                            className={`h-4 w-4 ${
-                              dish.isDishOfDay
-                                ? 'fill-yellow-400 text-yellow-400'
-                                : ''
-                            }`}
-                          />
+                          <Star className="h-4 w-4" />
                         </Button>
                       </TableCell>
                       <TableCell>

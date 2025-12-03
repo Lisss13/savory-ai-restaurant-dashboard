@@ -76,8 +76,6 @@ export interface Restaurant {
   image_url?: string;
   currency?: string;
   working_hours: WorkingHour[];
-  reservation_duration?: number;
-  min_reservation_time?: number;
 }
 
 export interface WorkingHour {
@@ -85,7 +83,6 @@ export interface WorkingHour {
   day_of_week: number;
   open_time: string;
   close_time: string;
-  is_closed?: boolean;
 }
 
 export interface CreateRestaurantRequest {
@@ -98,8 +95,18 @@ export interface CreateRestaurantRequest {
   image_url?: string;
   currency?: string;
   working_hours: WorkingHour[];
+}
+
+export interface UpdateRestaurantRequest {
+  name?: string;
+  address?: string;
+  phone?: string;
+  website?: string;
+  description?: string;
+  image_url?: string;
+  currency?: string;
   reservation_duration?: number;
-  min_reservation_time?: number;
+  working_hours?: WorkingHour[];
 }
 
 // Table types
@@ -123,8 +130,8 @@ export interface CreateTableRequest {
 // Menu Category types
 export interface MenuCategory {
   id: number;
-  createdAt: string;
-  restaurantId: number;
+  created_at: string;
+  restaurant_id: number;
   name: string;
   sort_order: number;
 }
@@ -142,12 +149,7 @@ export interface UpdateCategorySortOrderRequest {
 // Dish types
 export interface Dish {
   id: number;
-  createdAt: string;
-  organization?: {
-    id: number;
-    name: string;
-    phone: string;
-  };
+  created_at: string;
   restaurant?: {
     id: number;
     name: string;
@@ -168,7 +170,6 @@ export interface Dish {
   calories: number;
   ingredients: Ingredient[];
   allergens?: Allergen[];
-  isDishOfDay?: boolean;
 }
 
 // Nutrition data interface
@@ -214,11 +215,6 @@ export interface Reservation {
   restaurant_name?: string;
   table_id?: number;
   table_name?: string;
-  table?: {
-    id: number;
-    name: string;
-    capacity?: number;
-  };
   customer_name: string;
   customer_phone: string;
   customer_email?: string;
@@ -257,10 +253,6 @@ export interface ChatSession {
   active: boolean;
   lastActive: string;
   table?: {
-    id: number;
-    name: string;
-  };
-  restaurant?: {
     id: number;
     name: string;
   };

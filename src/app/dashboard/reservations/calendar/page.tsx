@@ -69,7 +69,7 @@ export default function ReservationsCalendarPage() {
   const getReservationsForDayAndTable = (date: Date, tableId: number) => {
     return filteredReservations.filter((r: Reservation) => {
       const reservationDate = new Date(r.reservation_date);
-      return isSameDay(reservationDate, date) && r.table?.id === tableId;
+      return isSameDay(reservationDate, date) && r.table_id === tableId;
     });
   };
 

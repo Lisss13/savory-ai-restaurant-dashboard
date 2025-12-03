@@ -362,7 +362,7 @@ export default function ReservationsListPage() {
                       <TableCell className="text-center">
                         {reservation.guest_count || 0}
                       </TableCell>
-                      <TableCell>{reservation.table_name || reservation.table?.name || '—'}</TableCell>
+                      <TableCell>{reservation.table_name || '—'}</TableCell>
                       <TableCell>
                         <Badge variant={STATUS_MAP[reservation.status]?.variant || 'secondary'}>
                           {STATUS_MAP[reservation.status]?.label || reservation.status}

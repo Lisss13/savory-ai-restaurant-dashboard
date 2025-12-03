@@ -96,7 +96,7 @@ export default function RestaurantDetailPage() {
       (h) => h.day_of_week === dayOfWeek
     );
 
-    if (!todayHours || todayHours.is_closed) return false;
+    if (!todayHours) return false;
 
     return currentTime >= todayHours.open_time && currentTime <= todayHours.close_time;
   };
@@ -337,30 +337,6 @@ export default function RestaurantDetailPage() {
                 </div>
               </div>
 
-              {(restaurant.reservation_duration || restaurant.min_reservation_time) && (
-                <>
-                  <Separator />
-                  <div>
-                    <h4 className="text-sm font-medium mb-3">{t.restaurantDetail.reservationSettings}</h4>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      {restaurant.reservation_duration && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">{t.restaurantDetail.reservationDuration}:</span>
-                          <span className="font-medium">{restaurant.reservation_duration} {t.restaurantDetail.minutes}</span>
-                        </div>
-                      )}
-                      {restaurant.min_reservation_time && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">{t.restaurantDetail.minReservationTime}:</span>
-                          <span className="font-medium">{restaurant.min_reservation_time} {t.restaurantDetail.minutes}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
             </CardContent>
           </Card>
 

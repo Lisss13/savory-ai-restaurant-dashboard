@@ -82,7 +82,7 @@ export default function RestaurantsPage() {
       (h) => h.day_of_week === dayOfWeek
     );
 
-    if (!todayHours || todayHours.is_closed) return false;
+    if (!todayHours) return false;
 
     return currentTime >= todayHours.open_time && currentTime <= todayHours.close_time;
   };

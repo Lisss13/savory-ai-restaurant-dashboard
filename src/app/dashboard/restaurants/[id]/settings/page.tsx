@@ -35,7 +35,6 @@ import { useTranslation } from '@/i18n';
 
 const settingsSchema = z.object({
   reservation_duration: z.number().min(15).max(480),
-  min_reservation_time: z.number().min(0).max(1440),
   auto_confirm_reservations: z.boolean(),
   send_reminder_notifications: z.boolean(),
   reminder_time_before: z.number().min(15).max(1440),
@@ -50,7 +49,6 @@ type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 const defaultSettings: SettingsFormValues = {
   reservation_duration: 120,
-  min_reservation_time: 60,
   auto_confirm_reservations: false,
   send_reminder_notifications: true,
   reminder_time_before: 60,
@@ -78,8 +76,7 @@ export default function RestaurantSettingsPage() {
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
-      reservation_duration: restaurant?.reservation_duration || defaultSettings.reservation_duration,
-      min_reservation_time: restaurant?.min_reservation_time || defaultSettings.min_reservation_time,
+      reservation_duration: defaultSettings.reservation_duration,
       auto_confirm_reservations: defaultSettings.auto_confirm_reservations,
       send_reminder_notifications: defaultSettings.send_reminder_notifications,
       reminder_time_before: defaultSettings.reminder_time_before,
@@ -93,7 +90,6 @@ export default function RestaurantSettingsPage() {
     mutationFn: (data: SettingsFormValues) =>
       restaurantApi.update(restaurantId, {
         reservation_duration: data.reservation_duration,
-        min_reservation_time: data.min_reservation_time,
         currency: data.currency,
       }),
     onSuccess: () => {
@@ -221,29 +217,6 @@ export default function RestaurantSettingsPage() {
                         </FormControl>
                         <FormDescription>
                           {t.restaurants.durationDesc}
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="min_reservation_time"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t.restaurants.minReservationTime}</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="0"
-                            max="1440"
-                            {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          {t.restaurants.minReservationTimeDesc}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
