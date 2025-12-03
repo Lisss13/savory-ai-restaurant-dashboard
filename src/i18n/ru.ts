@@ -191,6 +191,7 @@ export const ru = {
     saveChanges: 'Сохранить изменения',
     restaurantUpdated: 'Ресторан обновлён',
     restaurantUpdateError: 'Ошибка при обновлении ресторана',
+    noAccess: 'Нет доступа к этому ресторану',
     enterRestaurantName: 'Введите название ресторана',
     enterAddress: 'Введите адрес',
     enterPhone: 'Введите телефон',

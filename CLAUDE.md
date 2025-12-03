@@ -15,7 +15,6 @@ npm run start    # Start production server
 
 - **Technical specification**: `docs/restaurant_dashboard_spec.md` - full project requirements, UI/UX specs, page descriptions, and feature details
 - **Server API**: `docs/swagger.yaml` - OpenAPI 3.0 specification for all backend endpoints
-- **Current tasks**: `docs/new_task.md` - current task or feature being implemented
 
 **Important**: When implementing new functionality, always refer to these files to ensure compliance with the spec and correct API usage.
 

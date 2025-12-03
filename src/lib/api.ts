@@ -206,8 +206,8 @@ export const restaurantApi = {
     return response.data;
   },
 
-  update: async (id: number, data: Partial<CreateRestaurantRequest>): Promise<ApiResponse<Restaurant>> => {
-    const response = await apiClient.put(`/restaurants/${id}`, data);
+  update: async (id: number, data: Partial<Omit<CreateRestaurantRequest, 'organization_id'>>): Promise<ApiResponse<Restaurant>> => {
+    const response = await apiClient.patch(`/restaurants/${id}`, data);
     return response.data;
   },
 

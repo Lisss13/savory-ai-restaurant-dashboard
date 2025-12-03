@@ -193,6 +193,7 @@ export const en: Translations = {
     saveChanges: 'Save changes',
     restaurantUpdated: 'Restaurant updated',
     restaurantUpdateError: 'Error updating restaurant',
+    noAccess: 'No access to this restaurant',
     enterRestaurantName: 'Enter restaurant name',
     enterAddress: 'Enter address',
     enterPhone: 'Enter phone',

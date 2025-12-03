@@ -10,6 +10,7 @@ import {
   Phone,
   Globe,
   Clock,
+  Banknote,
   Pencil,
   Settings,
   QrCode,
@@ -320,6 +321,13 @@ export default function RestaurantDetailPage() {
                     <p className="text-muted-foreground">
                       {format(new Date(restaurant.created_at), 'd MMMM yyyy', { locale: ru })}
                     </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Banknote className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div>
+                    <h4 className="text-sm font-medium">Валюта</h4>
+                    <p className="text-muted-foreground">{restaurant.currency || 'RUB'}</p>
                   </div>
                 </div>
               </div>

@@ -162,7 +162,6 @@ export default function EditRestaurantPage() {
     mutationFn: (data: RestaurantFormValues) =>
       restaurantApi.update(restaurantId, {
         ...data,
-        organization_id: organization?.id,
         working_hours: data.working_hours
           .filter((h) => !h.is_closed)
           .map((h) => ({
@@ -177,8 +176,12 @@ export default function EditRestaurantPage() {
       toast.success(t.restaurants.restaurantUpdated);
       router.push('/dashboard/restaurants');
     },
-    onError: () => {
-      toast.error(t.restaurants.restaurantUpdateError);
+    onError: (error: Error & { response?: { status?: number } }) => {
+      if (error.response?.status === 403) {
+        toast.error(t.restaurants.noAccess);
+      } else {
+        toast.error(t.restaurants.restaurantUpdateError);
+      }
     },
   });
 
