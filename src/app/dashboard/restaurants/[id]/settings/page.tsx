@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { restaurantApi } from '@/lib/api';
+import { useTranslation } from '@/i18n';
 
 const settingsSchema = z.object({
   reservation_duration: z.number().min(15).max(480),
@@ -43,18 +44,7 @@ const settingsSchema = z.object({
   currency: z.string().min(1),
 });
 
-const CURRENCIES = [
-  { value: 'RUB', label: 'RUB — Российский рубль', symbol: '₽' },
-  { value: 'USD', label: 'USD — Доллар США', symbol: '$' },
-  { value: 'EUR', label: 'EUR — Евро', symbol: '€' },
-  { value: 'KZT', label: 'KZT — Казахстанский тенге', symbol: '₸' },
-  { value: 'BYN', label: 'BYN — Белорусский рубль', symbol: 'Br' },
-  { value: 'UAH', label: 'UAH — Украинская гривна', symbol: '₴' },
-  { value: 'GEL', label: 'GEL — Грузинский лари', symbol: '₾' },
-  { value: 'AZN', label: 'AZN — Азербайджанский манат', symbol: '₼' },
-  { value: 'AMD', label: 'AMD — Армянский драм', symbol: '֏' },
-  { value: 'UZS', label: 'UZS — Узбекский сум', symbol: 'сўм' },
-];
+const CURRENCY_KEYS = ['RUB', 'USD', 'EUR', 'KZT', 'BYN', 'UAH', 'GEL', 'AZN', 'AMD', 'UZS'] as const;
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
@@ -73,6 +63,7 @@ export default function RestaurantSettingsPage() {
   const router = useRouter();
   const params = useParams();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const restaurantId = Number(params.id);
 
   const { data: restaurant, isLoading } = useQuery({
@@ -107,13 +98,13 @@ export default function RestaurantSettingsPage() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['restaurant', restaurantId] });
-      toast.success('Настройки сохранены');
+      toast.success(t.restaurants.settingsSaved);
     },
     onError: (error: Error & { response?: { status?: number } }) => {
       if (error.response?.status === 403) {
-        toast.error('Нет доступа к этому ресторану');
+        toast.error(t.restaurants.noAccess);
       } else {
-        toast.error('Ошибка при сохранении настроек');
+        toast.error(t.restaurants.settingsError);
       }
     },
   });
@@ -127,10 +118,10 @@ export default function RestaurantSettingsPage() {
       <>
         <Header
           breadcrumbs={[
-            { title: 'Дашборд', href: '/dashboard' },
-            { title: 'Рестораны', href: '/dashboard/restaurants' },
-            { title: 'Загрузка...', href: `/dashboard/restaurants/${restaurantId}` },
-            { title: 'Настройки' },
+            { title: t.nav.dashboard, href: '/dashboard' },
+            { title: t.nav.restaurants, href: '/dashboard/restaurants' },
+            { title: t.common.loading, href: `/dashboard/restaurants/${restaurantId}` },
+            { title: t.nav.settings },
           ]}
         />
         <main className="flex-1 space-y-6 p-6">
@@ -149,15 +140,15 @@ export default function RestaurantSettingsPage() {
       <>
         <Header
           breadcrumbs={[
-            { title: 'Дашборд', href: '/dashboard' },
-            { title: 'Рестораны', href: '/dashboard/restaurants' },
-            { title: 'Не найден' },
+            { title: t.nav.dashboard, href: '/dashboard' },
+            { title: t.nav.restaurants, href: '/dashboard/restaurants' },
+            { title: t.restaurants.notFound },
           ]}
         />
         <main className="flex-1 p-6">
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
-              Ресторан не найден
+              {t.restaurants.restaurantNotFound}
             </CardContent>
           </Card>
         </main>
@@ -169,10 +160,10 @@ export default function RestaurantSettingsPage() {
     <>
       <Header
         breadcrumbs={[
-          { title: 'Дашборд', href: '/dashboard' },
-          { title: 'Рестораны', href: '/dashboard/restaurants' },
+          { title: t.nav.dashboard, href: '/dashboard' },
+          { title: t.nav.restaurants, href: '/dashboard/restaurants' },
           { title: restaurant.name, href: `/dashboard/restaurants/${restaurantId}` },
-          { title: 'Настройки' },
+          { title: t.nav.settings },
         ]}
       />
       <main className="flex-1 space-y-6 p-6">
@@ -181,9 +172,9 @@ export default function RestaurantSettingsPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Настройки ресторана</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t.restaurants.settingsTitle}</h1>
             <p className="text-muted-foreground">
-              Управляйте параметрами {restaurant.name}
+              {t.restaurants.settingsSubtitle} {restaurant.name}
             </p>
           </div>
         </div>
@@ -196,10 +187,10 @@ export default function RestaurantSettingsPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Clock className="h-5 w-5" />
-                    Настройки бронирования
+                    {t.restaurants.reservationSettingsTitle}
                   </CardTitle>
                   <CardDescription>
-                    Параметры для бронирования столов
+                    {t.restaurants.reservationSettingsDesc}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -208,28 +199,28 @@ export default function RestaurantSettingsPage() {
                     name="reservation_duration"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Длительность бронирования (минуты)</FormLabel>
+                        <FormLabel>{t.restaurants.reservationDuration}</FormLabel>
                         <FormControl>
                           <Select
                             value={String(field.value)}
                             onValueChange={(value) => field.onChange(Number(value))}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Выберите длительность" />
+                              <SelectValue placeholder={t.restaurants.selectDuration} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="30">30 минут</SelectItem>
-                              <SelectItem value="60">1 час</SelectItem>
-                              <SelectItem value="90">1.5 часа</SelectItem>
-                              <SelectItem value="120">2 часа</SelectItem>
-                              <SelectItem value="150">2.5 часа</SelectItem>
-                              <SelectItem value="180">3 часа</SelectItem>
-                              <SelectItem value="240">4 часа</SelectItem>
+                              <SelectItem value="30">{t.restaurants.minutes30}</SelectItem>
+                              <SelectItem value="60">{t.restaurants.hour1}</SelectItem>
+                              <SelectItem value="90">{t.restaurants.hours1_5}</SelectItem>
+                              <SelectItem value="120">{t.restaurants.hours2}</SelectItem>
+                              <SelectItem value="150">{t.restaurants.hours2_5}</SelectItem>
+                              <SelectItem value="180">{t.restaurants.hours3}</SelectItem>
+                              <SelectItem value="240">{t.restaurants.hours4}</SelectItem>
                             </SelectContent>
                           </Select>
                         </FormControl>
                         <FormDescription>
-                          Стандартная продолжительность бронирования стола
+                          {t.restaurants.durationDesc}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -241,7 +232,7 @@ export default function RestaurantSettingsPage() {
                     name="min_reservation_time"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Минимальное время до бронирования (минуты)</FormLabel>
+                        <FormLabel>{t.restaurants.minReservationTime}</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -252,7 +243,7 @@ export default function RestaurantSettingsPage() {
                           />
                         </FormControl>
                         <FormDescription>
-                          За сколько минут до визита можно забронировать стол
+                          {t.restaurants.minReservationTimeDesc}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -268,10 +259,10 @@ export default function RestaurantSettingsPage() {
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                         <div className="space-y-0.5">
                           <FormLabel className="text-base">
-                            Автоподтверждение броней
+                            {t.restaurants.autoConfirm}
                           </FormLabel>
                           <FormDescription>
-                            Автоматически подтверждать новые бронирования
+                            {t.restaurants.autoConfirmDesc}
                           </FormDescription>
                         </div>
                         <FormControl>
@@ -291,10 +282,10 @@ export default function RestaurantSettingsPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Banknote className="h-5 w-5" />
-                    Валюта меню
+                    {t.restaurants.currencyMenuTitle}
                   </CardTitle>
                   <CardDescription>
-                    Валюта для отображения цен в меню ресторана
+                    {t.restaurants.currencyMenuDesc}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -303,26 +294,26 @@ export default function RestaurantSettingsPage() {
                     name="currency"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Валюта</FormLabel>
+                        <FormLabel>{t.restaurants.currency}</FormLabel>
                         <FormControl>
                           <Select
                             value={field.value}
                             onValueChange={field.onChange}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Выберите валюту" />
+                              <SelectValue placeholder={t.restaurants.selectCurrency} />
                             </SelectTrigger>
                             <SelectContent>
-                              {CURRENCIES.map((currency) => (
-                                <SelectItem key={currency.value} value={currency.value}>
-                                  {currency.label}
+                              {CURRENCY_KEYS.map((key) => (
+                                <SelectItem key={key} value={key}>
+                                  {t.restaurants[`currency${key}` as keyof typeof t.restaurants]}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </FormControl>
                         <FormDescription>
-                          Выбранная валюта будет отображаться рядом с ценами блюд
+                          {t.restaurants.currencyHint}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -339,13 +330,13 @@ export default function RestaurantSettingsPage() {
                 variant="outline"
                 onClick={() => router.back()}
               >
-                Отмена
+                {t.common.cancel}
               </Button>
               <Button type="submit" disabled={updateMutation.isPending}>
                 {updateMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Сохранить настройки
+                {t.restaurants.saveSettings}
               </Button>
             </div>
           </form>
