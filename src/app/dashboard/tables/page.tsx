@@ -229,7 +229,7 @@ export default function TablesPage() {
             {tables?.map((table: Table) => {
               const tableStatus = getTableStatus(table.id);
               return (
-                <Card key={table.id}>
+                <Card key={table.id} className="flex flex-col">
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">{table.name}</CardTitle>
@@ -250,7 +250,7 @@ export default function TablesPage() {
                       {table.guestCount} {t.tablesSection.seats}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="mt-auto">
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
