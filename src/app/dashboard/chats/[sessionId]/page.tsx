@@ -13,12 +13,9 @@ import {
   User,
   Bot,
   Building2,
-  Phone,
   CalendarPlus,
   X,
-  Sparkles,
   Clock,
-  Mail,
 } from 'lucide-react';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
@@ -54,7 +51,6 @@ export default function ChatSessionPage() {
   const sessionId = parseInt(params.sessionId as string);
 
   const [message, setMessage] = useState('');
-  const [isAiEnabled, setIsAiEnabled] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Получаем сообщения чата
@@ -74,8 +70,6 @@ export default function ChatSessionPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chatMessages', sessionId] });
       setMessage('');
-      // При отправке сообщения персоналом AI отключается
-      setIsAiEnabled(false);
     },
     onError: () => {
       toast.error('Ошибка отправки сообщения');
@@ -107,11 +101,6 @@ export default function ChatSessionPage() {
 
   const handleQuickReply = (reply: string) => {
     sendMutation.mutate(reply);
-  };
-
-  const handleReturnToAi = () => {
-    setIsAiEnabled(true);
-    toast.success('AI-бот снова отвечает на сообщения');
   };
 
   const getMessageIcon = (authorType: string) => {
@@ -153,17 +142,6 @@ export default function ChatSessionPage() {
     }
   };
 
-  // Анализ последних сообщений для определения статуса AI
-  useEffect(() => {
-    if (messages && messages.length > 0) {
-      const lastMessages = messages.slice(-5);
-      const hasStaffMessage = lastMessages.some((m: ChatMessage) => m.authorType === 'restaurant');
-      if (hasStaffMessage) {
-        setIsAiEnabled(false);
-      }
-    }
-  }, [messages]);
-
   // Подсчёт статистики чата
   const chatStats = {
     totalMessages: messages?.length || 0,
@@ -195,21 +173,6 @@ export default function ChatSessionPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {!isAiEnabled && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" onClick={handleReturnToAi}>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Вернуть AI
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Включить автоматические ответы AI-бота</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
             <Button
               variant="destructive"
               onClick={() => closeMutation.mutate()}
@@ -225,22 +188,7 @@ export default function ChatSessionPage() {
           {/* Chat Window */}
           <Card className="col-span-8">
             <CardHeader className="py-3 border-b">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge variant={isAiEnabled ? 'default' : 'secondary'}>
-                    {isAiEnabled ? (
-                      <>
-                        <Bot className="mr-1 h-3 w-3" />
-                        AI активен
-                      </>
-                    ) : (
-                      <>
-                        <Building2 className="mr-1 h-3 w-3" />
-                        Персонал отвечает
-                      </>
-                    )}
-                  </Badge>
-                </div>
+              <div className="flex items-center justify-end">
                 <p className="text-sm text-muted-foreground">
                   {chatStats.totalMessages} сообщений
                 </p>
@@ -353,11 +301,6 @@ export default function ChatSessionPage() {
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
-                {!isAiEnabled && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    AI-бот приостановлен. Нажмите &quot;Вернуть AI&quot; для возобновления автоматических ответов.
-                  </p>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -427,69 +370,9 @@ export default function ChatSessionPage() {
                     <CalendarPlus className="mr-2 h-4 w-4" />
                     Создать бронирование
                   </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start">
-                    <Phone className="mr-2 h-4 w-4" />
-                    Позвонить гостю
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start">
-                    <Mail className="mr-2 h-4 w-4" />
-                    Отправить email
-                  </Button>
                 </div>
               </div>
 
-              <Separator />
-
-              {/* Статус AI */}
-              <div className="space-y-3">
-                <p className="text-sm font-medium">Статус AI-бота</p>
-                <div
-                  className={`p-3 rounded-lg ${
-                    isAiEnabled
-                      ? 'bg-green-50 dark:bg-green-900/20 border border-green-200'
-                      : 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    {isAiEnabled ? (
-                      <>
-                        <Bot className="h-5 w-5 text-green-600" />
-                        <div>
-                          <p className="font-medium text-green-700 dark:text-green-400">
-                            AI активен
-                          </p>
-                          <p className="text-xs text-green-600/70">
-                            Автоматически отвечает на вопросы
-                          </p>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <Building2 className="h-5 w-5 text-yellow-600" />
-                        <div>
-                          <p className="font-medium text-yellow-700 dark:text-yellow-400">
-                            AI приостановлен
-                          </p>
-                          <p className="text-xs text-yellow-600/70">
-                            Персонал ведёт диалог
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-                {!isAiEnabled && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={handleReturnToAi}
-                  >
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Вернуть AI
-                  </Button>
-                )}
-              </div>
             </CardContent>
           </Card>
         </div>

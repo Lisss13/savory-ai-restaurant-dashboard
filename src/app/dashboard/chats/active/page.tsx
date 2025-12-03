@@ -17,7 +17,6 @@ import {
   Phone,
   CalendarPlus,
   ExternalLink,
-  Sparkles,
   Circle,
   Bell,
 } from 'lucide-react';
@@ -57,7 +56,6 @@ export default function ActiveChatsPage() {
   ];
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
   const [message, setMessage] = useState('');
-  const [isAiEnabled, setIsAiEnabled] = useState(true);
   const [chatFilter, setChatFilter] = useState<ChatFilter>('active');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -66,10 +64,46 @@ export default function ActiveChatsPage() {
     queryFn: async () => {
       if (!selectedRestaurant) return [];
       const response = await chatApi.getRestaurantSessions(selectedRestaurant.id);
-      // Handle both wrapped { sessions: [...] } and direct array responses
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rawData = response.data as any;
-      return (rawData?.sessions || (Array.isArray(rawData) ? rawData : [])) as ChatSession[];
+      const responseData = response as any;
+
+      // Handle multiple possible response structures:
+      // 1. { data: { sessions: [...] } } - wrapped with sessions key
+      // 2. { data: [...] } - direct array in data
+      // 3. { sessions: [...] } - sessions at root
+      // 4. [...] - direct array
+      let rawSessions: unknown[] = [];
+
+      if (Array.isArray(responseData)) {
+        rawSessions = responseData;
+      } else if (Array.isArray(responseData?.data)) {
+        rawSessions = responseData.data;
+      } else if (Array.isArray(responseData?.data?.sessions)) {
+        rawSessions = responseData.data.sessions;
+      } else if (Array.isArray(responseData?.sessions)) {
+        rawSessions = responseData.sessions;
+      }
+
+      // Normalize session data - API returns { session: {...} } wrapper
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const normalized = rawSessions.map((item: any) => {
+        // Unwrap session object if nested
+        const s = item.session || item;
+        return {
+          ...s,
+          id: s.id ?? s.session_id ?? s.sessionId,
+          active: s.active ?? s.is_active,
+          status: s.status ?? (s.active ? 'active' : 'closed'),
+          lastActive: s.lastActive ?? s.last_active,
+          createdAt: s.createdAt ?? s.created_at,
+          closedAt: s.closedAt ?? s.closed_at,
+          messageCount: s.messageCount ?? s.message_count ?? s.messages?.length,
+          unreadCount: s.unreadCount ?? s.unread_count,
+        };
+      }) as ChatSession[];
+
+      return normalized;
     },
     enabled: !!selectedRestaurant,
     refetchInterval: 10000,
@@ -113,7 +147,6 @@ export default function ActiveChatsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chatMessages'] });
       setMessage('');
-      setIsAiEnabled(false);
     },
     onError: () => {
       toast.error(t.chatsSection.sendError);
@@ -136,17 +169,6 @@ export default function ActiveChatsPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Определяем статус AI при смене чата
-  useEffect(() => {
-    if (messages && messages.length > 0) {
-      const lastMessages = messages.slice(-5);
-      const hasStaffMessage = lastMessages.some((m: ChatMessage) => m.authorType === 'restaurant');
-      setIsAiEnabled(!hasStaffMessage);
-    } else {
-      setIsAiEnabled(true);
-    }
-  }, [messages, selectedSession?.id]);
-
   const handleSend = () => {
     if (!message.trim() || !selectedSession) return;
     sendMutation.mutate(message);
@@ -155,11 +177,6 @@ export default function ActiveChatsPage() {
   const handleQuickReply = (reply: string) => {
     if (!selectedSession) return;
     sendMutation.mutate(reply);
-  };
-
-  const handleReturnToAi = () => {
-    setIsAiEnabled(true);
-    toast.success(t.chatsSection.aiReturnedSuccess);
   };
 
   const getMessageIcon = (authorType: string) => {
@@ -361,14 +378,9 @@ export default function ActiveChatsPage() {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <CardTitle className="text-base">
-                          {selectedSession.table?.name || t.chatsSection.restaurantChat}
-                        </CardTitle>
-                        <Badge variant={isAiEnabled ? 'default' : 'secondary'} className="text-xs">
-                          {isAiEnabled ? t.chatsSection.ai : t.chatsSection.staff}
-                        </Badge>
-                      </div>
+                      <CardTitle className="text-base">
+                        {selectedSession.table?.name || t.chatsSection.restaurantChat}
+                      </CardTitle>
                       <p className="text-sm text-muted-foreground">
                         {selectedSession.messageCount || 0} {t.chatsSection.messagesCount}
                       </p>
@@ -381,7 +393,7 @@ export default function ActiveChatsPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => router.push(`/dashboard/chats/${selectedSession.id}`)}
+                            onClick={() => router.push(`/dashboard/chats/${selectedSession?.id}`)}
                           >
                             <ExternalLink className="h-4 w-4" />
                           </Button>
@@ -507,49 +519,6 @@ export default function ActiveChatsPage() {
 
                   <Separator />
 
-                  {/* Статус AI */}
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">{t.chatsSection.aiStatus}</p>
-                    <div
-                      className={`p-3 rounded-lg ${
-                        isAiEnabled
-                          ? 'bg-green-50 dark:bg-green-900/20'
-                          : 'bg-yellow-50 dark:bg-yellow-900/20'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        {isAiEnabled ? (
-                          <>
-                            <Bot className="h-4 w-4 text-green-600" />
-                            <span className="text-sm text-green-700 dark:text-green-400">
-                              {t.chatsSection.aiResponding}
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <Building2 className="h-4 w-4 text-yellow-600" />
-                            <span className="text-sm text-yellow-700 dark:text-yellow-400">
-                              {t.chatsSection.staffChatting}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    {!isAiEnabled && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full mt-2"
-                        onClick={handleReturnToAi}
-                      >
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        {t.chatsSection.returnToAi}
-                      </Button>
-                    )}
-                  </div>
-
-                  <Separator />
-
                   <div className="space-y-2">
                     <p className="text-sm font-medium">{t.chatsSection.quickActions}</p>
                     <Button
@@ -569,7 +538,7 @@ export default function ActiveChatsPage() {
                       variant="outline"
                       size="sm"
                       className="w-full justify-start"
-                      onClick={() => router.push(`/dashboard/chats/${selectedSession.id}`)}
+                      onClick={() => router.push(`/dashboard/chats/${selectedSession?.id}`)}
                     >
                       <ExternalLink className="mr-2 h-4 w-4" />
                       {t.chatsSection.openSeparately}
