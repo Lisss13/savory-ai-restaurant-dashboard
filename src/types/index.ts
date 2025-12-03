@@ -255,10 +255,7 @@ export interface AvailableSlot {
 export interface ChatSession {
   id: number;
   active: boolean;
-  status: 'active' | 'closed';
   lastActive: string;
-  createdAt: string;
-  closedAt?: string;
   table?: {
     id: number;
     name: string;
@@ -268,8 +265,6 @@ export interface ChatSession {
     name: string;
   };
   messages?: ChatMessage[];
-  messageCount?: number;
-  unreadCount?: number;
 }
 
 export interface ChatMessage {

@@ -17,8 +17,6 @@ import {
   Building2,
   CalendarPlus,
   ExternalLink,
-  Circle,
-  Bell,
   Calendar,
   Users,
 } from 'lucide-react';
@@ -72,11 +70,7 @@ export default function ActiveChatsPage() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const responseData = response as any;
 
-      // Handle multiple possible response structures:
-      // 1. { data: { sessions: [...] } } - wrapped with sessions key
-      // 2. { data: [...] } - direct array in data
-      // 3. { sessions: [...] } - sessions at root
-      // 4. [...] - direct array
+      // Handle multiple possible response structures
       let rawSessions: unknown[] = [];
 
       if (Array.isArray(responseData)) {
@@ -89,21 +83,23 @@ export default function ActiveChatsPage() {
         rawSessions = responseData.sessions;
       }
 
-      // Normalize session data - API returns { session: {...} } wrapper
+      // Normalize session data
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const normalized = rawSessions.map((item: any) => {
-        // Unwrap session object if nested
         const s = item.session || item;
         return {
-          ...s,
           id: s.id ?? s.session_id ?? s.sessionId,
-          active: s.active ?? s.is_active,
-          status: s.status ?? (s.active ? 'active' : 'closed'),
+          active: s.active ?? s.is_active ?? true,
           lastActive: s.lastActive ?? s.last_active,
-          createdAt: s.createdAt ?? s.created_at,
-          closedAt: s.closedAt ?? s.closed_at,
-          messageCount: s.messageCount ?? s.message_count ?? s.messages?.length,
-          unreadCount: s.unreadCount ?? s.unread_count,
+          table: s.table ? {
+            id: s.table.id,
+            name: s.table.name ?? s.table.table_name,
+          } : undefined,
+          restaurant: s.restaurant ? {
+            id: s.restaurant.id,
+            name: s.restaurant.name ?? s.restaurant.restaurant_name,
+          } : undefined,
+          messages: s.messages || [],
         };
       }) as ChatSession[];
 
@@ -113,21 +109,14 @@ export default function ActiveChatsPage() {
     refetchInterval: 10000,
   });
 
-  // Helper to check if session is active
-  const isSessionActive = (s: ChatSession) =>
-    s.active === true ||
-    s.status === 'active' ||
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (s as any).is_active === true;
-
-  // Filter sessions based on selected filter
+  // Filter sessions based on selected filter (using `active` field)
   const sessions = useMemo(() => {
     if (!allSessions) return [];
     switch (chatFilter) {
       case 'active':
-        return allSessions.filter(isSessionActive);
+        return allSessions.filter((s) => s.active === true);
       case 'closed':
-        return allSessions.filter((s) => !isSessionActive(s));
+        return allSessions.filter((s) => s.active === false);
       case 'all':
       default:
         return allSessions;
@@ -231,14 +220,6 @@ export default function ActiveChatsPage() {
     }
   };
 
-  // Подсчёт общего количества непрочитанных
-  const totalUnread = sessions?.reduce((acc: number, s: ChatSession) => acc + (s.unreadCount || 0), 0) || 0;
-
-  // Определяем, ожидает ли чат ответа
-  const isWaitingResponse = (session: ChatSession) => {
-    return session.unreadCount && session.unreadCount > 0;
-  };
-
   if (!selectedRestaurant) {
     return (
       <>
@@ -271,11 +252,6 @@ export default function ActiveChatsPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
               {t.chatsSection.activeChats}
-              {totalUnread > 0 && (
-                <Badge variant="destructive" className="ml-3">
-                  {totalUnread} {t.chatsSection.unread}
-                </Badge>
-              )}
             </h1>
             <p className="text-muted-foreground">
               {t.chatsSection.communicateInRealTime}
@@ -291,18 +267,6 @@ export default function ActiveChatsPage() {
                 <CardTitle className="text-lg">
                   {t.chatsSection.chatsCount} ({sessions?.length || 0})
                 </CardTitle>
-                {totalUnread > 0 && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Bell className="h-4 w-4 text-destructive animate-pulse" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{totalUnread} {t.chatsSection.waitingForResponse}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
               </div>
               <Tabs value={chatFilter} onValueChange={(v) => setChatFilter(v as ChatFilter)}>
                 <TabsList className="w-full">
@@ -341,11 +305,6 @@ export default function ActiveChatsPage() {
                         }`}
                         onClick={() => setSelectedSession(session)}
                       >
-                        {/* Индикатор ожидания ответа */}
-                        {isWaitingResponse(session) && (
-                          <Circle className="absolute left-1 top-1/2 -translate-y-1/2 h-2 w-2 fill-destructive text-destructive animate-pulse" />
-                        )}
-
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
                             <AvatarFallback className={session.table ? 'bg-primary/10' : 'bg-secondary'}>
@@ -368,11 +327,6 @@ export default function ActiveChatsPage() {
                                 t.chatsSection.noMessages}
                             </p>
                           </div>
-                          {session.unreadCount && session.unreadCount > 0 && (
-                            <Badge variant="destructive" className="rounded-full shrink-0">
-                              {session.unreadCount}
-                            </Badge>
-                          )}
                         </div>
                         <div className="flex items-center justify-between mt-1">
                           <p className="text-xs text-muted-foreground">
@@ -381,7 +335,7 @@ export default function ActiveChatsPage() {
                               : '—'}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {session.messageCount || 0} {t.chatsSection.messages}
+                            {session.messages?.length || 0} {t.chatsSection.messages}
                           </p>
                         </div>
                       </button>
@@ -408,7 +362,7 @@ export default function ActiveChatsPage() {
                         {selectedSession.table?.name || t.chatsSection.restaurantChat}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground">
-                        {selectedSession.messageCount || 0} {t.chatsSection.messagesCount}
+                        {selectedSession.messages?.length || 0} {t.chatsSection.messagesCount}
                       </p>
                     </div>
                   </div>

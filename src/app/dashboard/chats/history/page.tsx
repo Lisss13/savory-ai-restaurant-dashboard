@@ -84,9 +84,6 @@ export default function ChatHistoryPage() {
     );
   }
 
-  console.log('sessions', sessions);
-  console.log('filteredSessions', filteredSessions);
-
   return (
     <>
       <Header

@@ -362,11 +362,6 @@ export default function DashboardPage() {
                               {session.messages?.[session.messages.length - 1]?.content || t.dashboard.noMessages}
                             </p>
                           </div>
-                          {session.unreadCount && session.unreadCount > 0 && (
-                            <Badge variant="destructive" className="rounded-full">
-                              {session.unreadCount}
-                            </Badge>
-                          )}
                         </Link>
                       ))}
                     </div>

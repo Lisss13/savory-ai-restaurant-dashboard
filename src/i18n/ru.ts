@@ -683,7 +683,7 @@ export const ru = {
     // Chats analytics page
     chatsAnalytics: 'Аналитика чатов',
     guestCommunicationStats: 'Статистика общения с гостями',
-    totalSessions: 'Всего сессий',
+    totalSessions: 'Всего чатов',
     avgResponseTime: 'Среднее время ответа',
     aiResponsePercent: '% AI ответов',
     tableChats: 'Чаты столиков',

@@ -685,7 +685,7 @@ export const en: Translations = {
     // Chats analytics page
     chatsAnalytics: 'Chats Analytics',
     guestCommunicationStats: 'Guest communication statistics',
-    totalSessions: 'Total sessions',
+    totalSessions: 'Total chats',
     avgResponseTime: 'Average response time',
     aiResponsePercent: '% AI responses',
     tableChats: 'Table chats',

@@ -104,7 +104,7 @@ export default function RestaurantDetailPage() {
 
   const getActiveChatsCount = () => {
     if (!chatSessions) return 0;
-    return chatSessions.filter((s: ChatSession) => s.status === 'active').length;
+    return chatSessions.filter((s: ChatSession) => s.active === true).length;
   };
 
   if (isLoading) {
