@@ -11,18 +11,17 @@ export * from './error-handling';
  * @param defaultValue The default value to return if the property doesn't exist
  * @returns The value at the specified path, or the default value if it doesn't exist
  */
-export function get<T>(obj: Record<string, unknown>, path: string, defaultValue: T): T {
+export function get<T>(obj: unknown, path: string, defaultValue: T): T {
   const keys = path.split('.');
-  let result = obj;
+  let result: unknown = obj;
 
   for (const key of keys) {
-    if (result === undefined || result === null) {
-      return defaultValue;
-    }
-    result = result[key];
+    if (result === undefined || result === null) return defaultValue;
+    if (typeof result !== 'object') return defaultValue;
+    result = (result as Record<string, unknown>)[key];
   }
 
-  return result === undefined || result === null ? defaultValue : result;
+  return (result === undefined || result === null ? defaultValue : result) as T;
 }
 
 /**
