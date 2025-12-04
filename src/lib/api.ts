@@ -416,7 +416,7 @@ export const chatApi = {
     return response.data;
   },
 
-  getRestaurantSessionMessages: async (sessionId: number): Promise<ApiResponse<ChatMessage[]>> => {
+  getRestaurantSessionMessages: async (sessionId: number): Promise<ApiResponse<{ messages: ChatMessage[]}>> => {
     const response = await apiClient.get(`/chat/restaurant/session/${sessionId}/messages`);
     return response.data;
   },

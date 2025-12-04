@@ -66,44 +66,7 @@ export default function ActiveChatsPage() {
     queryFn: async () => {
       if (!selectedRestaurant) return [];
       const response = await chatApi.getRestaurantSessions(selectedRestaurant.id);
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const responseData = response as any;
-
-      // Handle multiple possible response structures
-      let rawSessions: unknown[] = [];
-
-      if (Array.isArray(responseData)) {
-        rawSessions = responseData;
-      } else if (Array.isArray(responseData?.data)) {
-        rawSessions = responseData.data;
-      } else if (Array.isArray(responseData?.data?.sessions)) {
-        rawSessions = responseData.data.sessions;
-      } else if (Array.isArray(responseData?.sessions)) {
-        rawSessions = responseData.sessions;
-      }
-
-      // Normalize session data
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const normalized = rawSessions.map((item: any) => {
-        const s = item.session || item;
-        return {
-          id: s.id ?? s.session_id ?? s.sessionId,
-          active: s.active ?? s.is_active ?? true,
-          lastActive: s.lastActive ?? s.last_active,
-          table: s.table ? {
-            id: s.table.id,
-            name: s.table.name ?? s.table.table_name,
-          } : undefined,
-          restaurant: s.restaurant ? {
-            id: s.restaurant.id,
-            name: s.restaurant.name ?? s.restaurant.restaurant_name,
-          } : undefined,
-          messages: s.messages || [],
-        };
-      }) as ChatSession[];
-
-      return normalized;
+      return response.data.sessions || [];
     },
     enabled: !!selectedRestaurant,
     refetchInterval: 10000,
@@ -128,10 +91,7 @@ export default function ActiveChatsPage() {
     queryFn: async () => {
       if (!selectedSession) return [];
       const response = await chatApi.getRestaurantSessionMessages(selectedSession.id);
-      // Handle both array directly and { messages: [...] } formats
-      const data = response.data;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return Array.isArray(data) ? data : ((data as any)?.messages || []);
+      return response.data.messages || [];
     },
     enabled: !!selectedSession,
     refetchInterval: 5000,
