@@ -180,6 +180,20 @@ export interface NutritionData {
   carbohydrates: number;
 }
 
+// Calculate nutrition API types
+export interface CalculateNutritionRequest {
+  name: string;
+  description: string;
+  ingredients: { name: string; quantity: number }[];
+}
+
+export interface CalculateNutritionResponse {
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+}
+
 export interface Ingredient {
   id?: number;
   name: string;

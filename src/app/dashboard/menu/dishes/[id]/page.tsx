@@ -401,18 +401,6 @@ export default function EditDishPage() {
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>{t.menuSection.nutritionValue}</CardTitle>
-                    <CardDescription>
-                      {t.menuSection.specifyNutrition}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <NutritionInput value={nutrition} onChange={setNutrition} />
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
                     <CardTitle>{t.menuSection.ingredients}</CardTitle>
                     <CardDescription>
                       {t.menuSection.dishComposition}
@@ -470,6 +458,24 @@ export default function EditDishPage() {
                       <Plus className="mr-2 h-4 w-4" />
                       {t.menuSection.addIngredient}
                     </Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t.menuSection.nutritionValue}</CardTitle>
+                    <CardDescription>
+                      {t.menuSection.specifyNutrition}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <NutritionInput
+                      value={nutrition}
+                      onChange={setNutrition}
+                      dishName={form.watch('name')}
+                      dishDescription={form.watch('description') || ''}
+                      ingredients={form.watch('ingredients')}
+                    />
                   </CardContent>
                 </Card>
 

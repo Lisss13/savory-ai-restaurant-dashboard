@@ -36,11 +36,12 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { chatApi, reservationApi } from '@/lib/api';
+import { chatApi, reservationApi, tableApi } from '@/lib/api';
 import { useRestaurantStore } from '@/store/restaurant';
-import type { ChatSession, ChatMessage, Reservation } from '@/types';
+import type { ChatSession, ChatMessage, Reservation, Table } from '@/types';
 
 type ChatFilter = 'all' | 'active' | 'closed';
+type ChatSource = 'tables' | 'restaurant';
 
 export default function ActiveChatsPage() {
   const { t } = useTranslation();
@@ -59,22 +60,57 @@ export default function ActiveChatsPage() {
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
   const [message, setMessage] = useState('');
   const [chatFilter, setChatFilter] = useState<ChatFilter>('active');
+  const [chatSource, setChatSource] = useState<ChatSource>('tables');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { data: allSessions, isLoading } = useQuery({
-    queryKey: ['chatSessions', selectedRestaurant?.id],
+  // Get all tables for the restaurant (needed for table chats)
+  const { data: tablesData } = useQuery({
+    queryKey: ['tables', selectedRestaurant?.id],
+    queryFn: async () => {
+      if (!selectedRestaurant) return [];
+      const response = await tableApi.getByRestaurant(selectedRestaurant.id);
+      return response.data.tables || [];
+    },
+    enabled: !!selectedRestaurant && chatSource === 'tables',
+  });
+
+  // Get table sessions (when chatSource === 'tables')
+  const { data: tableSessionsData, isLoading: tableSessionsLoading } = useQuery({
+    queryKey: ['tableChatSessions', selectedRestaurant?.id, tablesData?.map((t: Table) => t.id)],
+    queryFn: async () => {
+      if (!selectedRestaurant || !tablesData || tablesData.length === 0) return [];
+
+      // Fetch sessions for all tables in parallel
+      const sessionsPromises = tablesData.map((table: Table) =>
+        chatApi.getTableSessions(table.id).then((res) => res.data.sessions || [])
+      );
+
+      const allTableSessions = await Promise.all(sessionsPromises);
+      return allTableSessions.flat();
+    },
+    enabled: !!selectedRestaurant && chatSource === 'tables' && !!tablesData && tablesData.length > 0,
+    refetchInterval: 10000,
+  });
+
+  // Get restaurant sessions (when chatSource === 'restaurant')
+  const { data: restaurantSessionsData, isLoading: restaurantSessionsLoading } = useQuery({
+    queryKey: ['restaurantChatSessions', selectedRestaurant?.id],
     queryFn: async () => {
       if (!selectedRestaurant) return [];
       const response = await chatApi.getRestaurantSessions(selectedRestaurant.id);
       return response.data.sessions || [];
     },
-    enabled: !!selectedRestaurant,
+    enabled: !!selectedRestaurant && chatSource === 'restaurant',
     refetchInterval: 10000,
   });
 
-  // Filter sessions based on selected filter (using `active` field)
+  const isLoading = chatSource === 'tables' ? tableSessionsLoading : restaurantSessionsLoading;
+  const allSessions = chatSource === 'tables' ? tableSessionsData : restaurantSessionsData;
+
+  // Filter sessions based on status filter
   const sessions = useMemo(() => {
     if (!allSessions) return [];
+
     switch (chatFilter) {
       case 'active':
         return allSessions.filter((s) => s.active === true);
@@ -87,11 +123,16 @@ export default function ActiveChatsPage() {
   }, [allSessions, chatFilter]);
 
   const { data: messages, isLoading: messagesLoading } = useQuery({
-    queryKey: ['chatMessages', selectedSession?.id],
+    queryKey: ['chatMessages', selectedSession?.id, chatSource],
     queryFn: async () => {
       if (!selectedSession) return [];
-      const response = await chatApi.getRestaurantSessionMessages(selectedSession.id);
-      return response.data.messages || [];
+      if (chatSource === 'tables') {
+        const response = await chatApi.getTableSessionMessages(selectedSession.id);
+        return response.data || [];
+      } else {
+        const response = await chatApi.getRestaurantSessionMessages(selectedSession.id);
+        return response.data.messages || [];
+      }
     },
     enabled: !!selectedSession,
     refetchInterval: 5000,
@@ -116,8 +157,13 @@ export default function ActiveChatsPage() {
   const reservations = reservationsData || [];
 
   const sendMutation = useMutation({
-    mutationFn: (content: string) =>
-      chatApi.sendRestaurantMessage(selectedSession!.id, content),
+    mutationFn: (content: string) => {
+      if (chatSource === 'tables') {
+        return chatApi.sendTableMessage(selectedSession!.id, content);
+      } else {
+        return chatApi.sendRestaurantMessage(selectedSession!.id, content);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chatMessages'] });
       queryClient.invalidateQueries({ queryKey: ['sessionReservations'] });
@@ -129,9 +175,19 @@ export default function ActiveChatsPage() {
   });
 
   const closeMutation = useMutation({
-    mutationFn: () => chatApi.closeRestaurantSession(selectedSession!.id),
+    mutationFn: () => {
+      if (chatSource === 'tables') {
+        return chatApi.closeTableSession(selectedSession!.id);
+      } else {
+        return chatApi.closeRestaurantSession(selectedSession!.id);
+      }
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chatSessions'] });
+      if (chatSource === 'tables') {
+        queryClient.invalidateQueries({ queryKey: ['tableChatSessions'] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['restaurantChatSessions'] });
+      }
       setSelectedSession(null);
       toast.success(t.chatsSection.chatClosed);
     },
@@ -217,6 +273,19 @@ export default function ActiveChatsPage() {
               {t.chatsSection.communicateInRealTime}
             </p>
           </div>
+          <Tabs value={chatSource} onValueChange={(v) => {
+            setChatSource(v as ChatSource);
+            setSelectedSession(null);
+          }}>
+            <TabsList>
+              <TabsTrigger value="tables">
+                {t.chatsSection.chatsByTables}
+              </TabsTrigger>
+              <TabsTrigger value="restaurant">
+                {t.chatsSection.chatsByRestaurant}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         <div className="grid grid-cols-12 gap-6 h-[calc(100vh-220px)]">

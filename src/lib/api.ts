@@ -33,6 +33,8 @@ import type {
   Language,
   SupportTicket,
   CreateSupportTicketRequest,
+  CalculateNutritionRequest,
+  CalculateNutritionResponse,
 } from '@/types';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
@@ -323,6 +325,11 @@ export const dishApi = {
 
   setDishOfDay: async (id: number): Promise<ApiResponse<void>> => {
     const response = await apiClient.post(`/dishes/dish-of-day/${id}`);
+    return response.data;
+  },
+
+  calculateNutrition: async (data: CalculateNutritionRequest): Promise<ApiResponse<CalculateNutritionResponse>> => {
+    const response = await apiClient.post('/dishes/calculate-nutrition', data);
     return response.data;
   },
 };

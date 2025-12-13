@@ -462,7 +462,7 @@ export const en: Translations = {
     dishOfDayLabel: 'Dish of the day',
     dishPhoto: 'Dish photo',
     uploadPhoto: 'Upload photo',
-    nutritionValue: 'Nutrition value (per 100g)',
+    nutritionValue: 'Nutrition value',
     specifyNutrition: 'Specify calories and macros',
     ingredients: 'Ingredients',
     dishComposition: 'Dish composition',
@@ -492,6 +492,17 @@ export const en: Translations = {
     allergenFish: 'Fish',
     allergenSoy: 'Soy',
     allergenSulfites: 'Sulfites',
+    // Calculate nutrition
+    calculateNutrition: 'Calculate Nutrition',
+    calculateNutritionTitle: 'Calculate Nutrition',
+    calculateNutritionDesc: 'AI will calculate approximate values based on the following data:',
+    calculateNutritionName: 'Name',
+    calculateNutritionDescription: 'Description',
+    calculateNutritionIngredients: 'Ingredients',
+    calculateNutritionWarning: 'Values will be approximate. We recommend checking and adjusting if necessary.',
+    calculateNutritionCalculating: 'Calculating...',
+    calculateNutritionSuccess: 'Nutrition calculated',
+    calculateNutritionError: 'Could not calculate. Please try again later.',
   },
 
   // Tables
@@ -573,6 +584,9 @@ export const en: Translations = {
     sendError: 'Error sending message',
     chatClosed: 'Chat closed',
     chatCloseError: 'Error closing chat',
+    // Chat source toggle
+    chatsByTables: 'By tables',
+    chatsByRestaurant: 'By restaurant',
     // Chat filter
     filterAll: 'All',
     filterActive: 'Active',

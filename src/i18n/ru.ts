@@ -460,7 +460,7 @@ export const ru = {
     dishOfDayLabel: 'Блюдо дня',
     dishPhoto: 'Фото блюда',
     uploadPhoto: 'Загрузить фото',
-    nutritionValue: 'Пищевая ценность (на 100г)',
+    nutritionValue: 'Пищевая ценность',
     specifyNutrition: 'Укажите КБЖУ блюда',
     ingredients: 'Ингредиенты',
     dishComposition: 'Состав блюда',
@@ -490,6 +490,17 @@ export const ru = {
     allergenFish: 'Рыба',
     allergenSoy: 'Соя',
     allergenSulfites: 'Сульфиты',
+    // Calculate nutrition
+    calculateNutrition: 'Рассчитать КБЖУ',
+    calculateNutritionTitle: 'Расчёт КБЖУ',
+    calculateNutritionDesc: 'AI рассчитает примерные значения на основе следующих данных:',
+    calculateNutritionName: 'Название',
+    calculateNutritionDescription: 'Описание',
+    calculateNutritionIngredients: 'Ингредиенты',
+    calculateNutritionWarning: 'Значения будут приблизительными. Рекомендуем проверить и скорректировать при необходимости.',
+    calculateNutritionCalculating: 'Расчёт...',
+    calculateNutritionSuccess: 'КБЖУ рассчитано',
+    calculateNutritionError: 'Не удалось рассчитать. Попробуйте позже.',
   },
 
   // Tables
@@ -571,6 +582,9 @@ export const ru = {
     sendError: 'Ошибка отправки сообщения',
     chatClosed: 'Чат закрыт',
     chatCloseError: 'Ошибка закрытия чата',
+    // Chat source toggle
+    chatsByTables: 'По столикам',
+    chatsByRestaurant: 'По ресторану',
     // Chat filter
     filterAll: 'Все',
     filterActive: 'Активные',
